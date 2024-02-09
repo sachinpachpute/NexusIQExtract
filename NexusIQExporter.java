@@ -7,10 +7,10 @@ import java.util.Base64;
 import java.util.Scanner;
 
 public class NexusIQExporter {
-    private static final String IQ_URL = "http://your_nexus_iq_server_url";
-    private static final String USERNAME = "your_username";
-    private static final String PASSWORD = "your_password";
-    private static final String APPLICATION_ID = "your_application_id";
+    private static final String IQ_URL = "https://nexus-iq.vocalink.co.uk";
+    private static final String USERNAME = "tanisha.sethi";
+    private static final String PASSWORD = "V0calink2023!";
+    private static final String APPLICATION_ID = "78a795c3d05044c4ba7297c15bdc7c0b";
 
     public static void main(String[] args) {
         try {
