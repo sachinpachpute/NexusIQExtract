@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class NexusComponentExporter {
-    private static final String NEXUS_RM_URL = "http://your_nexus_rm_server_url";
+    private static final String NEXUS_RM_URL = "https://nexus-rm.vocalink.co.uk";
     private static final String REPOSITORY_NAME = "releases";
     private static final String CSV_FILE_PATH = "component_list.csv";
     private static final String USERNAME = "your_username";
