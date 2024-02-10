@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -11,6 +12,8 @@ public class NexusComponentExporter {
     private static final String NEXUS_RM_URL = "http://your_nexus_rm_server_url";
     private static final String REPOSITORY_NAME = "releases";
     private static final String CSV_FILE_PATH = "component_list.csv";
+    private static final String USERNAME = "your_username";
+    private static final String PASSWORD = "your_password";
 
     public static void main(String[] args) {
         try {
@@ -28,6 +31,10 @@ public class NexusComponentExporter {
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
         conn.setRequestProperty("Accept", "application/json");
+
+        String authString = USERNAME + ":" + PASSWORD;
+        String encodedAuth = Base64.getEncoder().encodeToString(authString.getBytes());
+        conn.setRequestProperty("Authorization", "Basic " + encodedAuth);
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
             String line;
