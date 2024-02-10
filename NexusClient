@@ -6,8 +6,8 @@ import java.util.Base64;
 
 public class NexusClient {
     public static void main(String[] args) {
-        String urlStr = "http://nexus.example.com/service/rest/v1/status"; // Replace with your actual Nexus API endpoint
-        String userCredentials = "username:password"; // Replace with your actual credentials
+        String urlStr = "https://nexus-iq.vocalink.co.uk/api/v2/organizations"; // Replace with your actual Nexus API endpoint
+        String userCredentials = "tanisha.sethi:V0calink2023!"; // Replace with your actual credentials
         String basicAuthPayload = Base64.getEncoder().encodeToString(userCredentials.getBytes());
 
         try {
@@ -33,3 +33,4 @@ public class NexusClient {
             e.printStackTrace();
         }
     }
+}
