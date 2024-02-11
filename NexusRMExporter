@@ -1,0 +1,69 @@
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Base64;
+
+public class NexusRMExporter {
+    private static final String RM_URL = "https://nexus-rm.vocalink.co.uk";
+    private static final String USERNAME = "sachin.pachpute";
+    private static final String PASSWORD = "SachShrav@404";
+
+    private static final String CSV_FILE_PATH = "repositories_list.csv";
+
+    public static void main(String[] args) {
+        try {
+            URL url = new URL(RM_URL + "/nexus/service/rest/v1/repositories");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            String userCredentials = USERNAME + ":" + PASSWORD;
+            String basicAuth = "Basic " + new String(Base64.getEncoder().encode(userCredentials.getBytes()));
+            conn.setRequestProperty("Authorization", basicAuth);
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+
+                BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                String inputLine;
+                StringBuilder response = new StringBuilder();
+
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+
+                System.out.println("List of Repositories:");
+                System.out.println(response.toString());
+
+                String absoluteFilePath = writeResponseToCSV(response.toString());
+                System.out.println("Data is exported to: " + absoluteFilePath);
+
+                // Parse JSON response
+                // Assuming JSON structure is like { "components": [ { "name": "library1", ... }, { "name": "library2", ... }, ... ] }
+                /*String jsonResponse = response.toString();
+                String[] libraries = jsonResponse.split("\"name\":\"");
+                PrintWriter writer = new PrintWriter(new FileWriter("libraries.txt"));
+                for (int i = 1; i < libraries.length; i++) {
+                    String library = libraries[i].split("\"")[0];
+                    writer.println(library);
+                }
+                writer.close();*/
+            } else {
+                System.out.println("Failed to fetch data list. Response code: " + responseCode);
+            }
+            conn.disconnect();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String  writeResponseToCSV(String responseData) {
+        File csvFile = new File(CSV_FILE_PATH);
+        try (PrintWriter writer = new PrintWriter(new BufferedWriter((new FileWriter(csvFile))))){
+            //Write response data to CSV file
+            writer.println(responseData);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return csvFile.getAbsolutePath();
+    }
+}
