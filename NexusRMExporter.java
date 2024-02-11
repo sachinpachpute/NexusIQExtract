@@ -20,45 +20,9 @@ public class NexusRMExporter {
     public static void main(String[] args) {
         try {
             List<Component> components = getComponentsFromRepository(REPOSITORY_NAME);
-            URL url = new URL(NEXUS_RM_URL + "/nexus/service/rest/v1/repositories");
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            String userCredentials = USERNAME + ":" + PASSWORD;
-            String basicAuth = "Basic " + new String(Base64.getEncoder().encode(userCredentials.getBytes()));
-            conn.setRequestProperty("Authorization", basicAuth);
+            writeComponentsToCSV(components);
+            System.out.println("Component data exported to: " + new File(CSV_FILE_PATH).getAbsolutePath());
 
-            int responseCode = conn.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-
-                BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                String inputLine;
-                StringBuilder response = new StringBuilder();
-
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-                }
-                in.close();
-
-                System.out.println("List of Repositories:");
-                System.out.println(response.toString());
-
-                String absoluteFilePath = writeResponseToCSV(response.toString());
-                System.out.println("Data is exported to: " + absoluteFilePath);
-
-                // Parse JSON response
-                // Assuming JSON structure is like { "components": [ { "name": "library1", ... }, { "name": "library2", ... }, ... ] }
-                /*String jsonResponse = response.toString();
-                String[] libraries = jsonResponse.split("\"name\":\"");
-                PrintWriter writer = new PrintWriter(new FileWriter("libraries.txt"));
-                for (int i = 1; i < libraries.length; i++) {
-                    String library = libraries[i].split("\"")[0];
-                    writer.println(library);
-                }
-                writer.close();*/
-            } else {
-                System.out.println("Failed to fetch data list. Response code: " + responseCode);
-            }
-            conn.disconnect();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -89,14 +53,39 @@ public class NexusRMExporter {
             System.out.println("List of Repositories:");
             System.out.println(response.toString());
 
-            String absoluteFilePath = writeResponseToCSV(response.toString());
-            System.out.println("Data is exported to: " + absoluteFilePath);
-        }
+            /*String absoluteFilePath = writeResponseToCSV(response.toString());
+            System.out.println("Data is exported to: " + absoluteFilePath);*/
 
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(response.toString()).get("items");
+            for (JsonNode node : jsonNode) {
+                String applicationName = repositoryName;
+                String componentName = node.get("name").asText();
+                String currentVersion = node.get("version").asText();
+                String latestVersion = getLatestVersion(componentName);
+                components.add(new Component(applicationName, componentName, currentVersion, latestVersion));
+            }
+        }
+        conn.disconnect();
         return components;
     }
 
-    private static String  writeResponseToCSV(String responseData) {
+    private static String getLatestVersion(String componentName) throws IOException {
+        // Implement logic to retrieve the latest version of the component from Nexus Repository Manager
+        // For demonstration purposes, we'll return a dummy value
+        return "1.0.0";
+    }
+
+    private static void writeComponentsToCSV(List<Component> components) throws IOException {
+        try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(CSV_FILE_PATH)))) {
+            writer.println("Application Name,Component Name,Current Version,Latest Version");
+            for (Component component : components) {
+                writer.println(component.toCSVString());
+            }
+        }
+    }
+
+    /*private static String  writeResponseToCSV(String responseData) {
         File csvFile = new File(CSV_FILE_PATH);
         try (PrintWriter writer = new PrintWriter(new BufferedWriter((new FileWriter(csvFile))))){
             //Write response data to CSV file
@@ -105,7 +94,7 @@ public class NexusRMExporter {
             e.printStackTrace();
         }
         return csvFile.getAbsolutePath();
-    }
+    }*/
 
     private static class Component {
         private String applicationName;
