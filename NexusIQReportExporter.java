@@ -1,23 +1,11 @@
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 
 public class NexusIQReportExporter {
 
@@ -25,11 +13,9 @@ public class NexusIQReportExporter {
         String applicationPublicId = "your_application_public_id";
         String reportId = "your_report_id";
         String url = "http://localhost:8070/api/v2/applications/" + applicationPublicId + "/reports/" + reportId + "/policy";
-        String username = "your_nexus_iq_username";
-        String password = "your_nexus_iq_password";
 
         try {
-            String responseJson = sendGetRequest(url, username, password);
+            String responseJson = sendGetRequest(url);
             List<PolicyDetail> policyDetails = extractPolicyDetails(responseJson);
             writeToCSV(policyDetails, "policy_details.csv");
             System.out.println("CSV file created successfully.");
@@ -38,18 +24,32 @@ public class NexusIQReportExporter {
         }
     }
 
-    private static String sendGetRequest(String url, String username, String password) throws IOException {
-        CredentialsProvider credsProvider = new BasicCredentialsProvider();
-        credsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
-        CloseableHttpClient httpClient = HttpClients.custom()
-                .setDefaultCredentialsProvider(credsProvider)
-                .build();
+    private static String sendGetRequest(String url) throws IOException {
+        HttpURLConnection connection = null;
+        BufferedReader reader = null;
+        StringBuilder response = new StringBuilder();
 
-        HttpGet httpGet = new HttpGet(url);
-        httpGet.setHeader("Accept", "application/json");
-        HttpResponse response = httpClient.execute(httpGet);
-        HttpEntity entity = response.getEntity();
-        return EntityUtils.toString(entity);
+        try {
+            URL urlObj = new URL(url);
+            connection = (HttpURLConnection) urlObj.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Accept", "application/json");
+
+            reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+
+        return response.toString();
     }
 
     private static List<PolicyDetail> extractPolicyDetails(String responseJson) throws IOException {
