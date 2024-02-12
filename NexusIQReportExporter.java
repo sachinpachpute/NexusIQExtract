@@ -80,9 +80,12 @@ public class NexusIQReportExporter {
                 continue;
             }
             for (JsonNode violationNode : violationsNode) {
+                if (violationNode.path("policyThreatLevel").asInt() <= threatLevel){
+                    continue;
+                }
                 threatLevel = violationNode.path("policyThreatLevel").asInt();
-                 policyName = violationNode.path("policyName").asText();
-                 threatCategory = violationNode.path("policyThreatCategory").asText();
+                policyName = violationNode.path("policyName").asText();
+                threatCategory = violationNode.path("policyThreatCategory").asText();
             }
 
             policyDetails.add(new PolicyDetail(threatLevel, threatCategory, policyName, componentDisplayName, applicationName));
