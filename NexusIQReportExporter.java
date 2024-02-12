@@ -3,14 +3,19 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
@@ -20,9 +25,11 @@ public class NexusIQReportExporter {
         String applicationPublicId = "your_application_public_id";
         String reportId = "your_report_id";
         String url = "http://localhost:8070/api/v2/applications/" + applicationPublicId + "/reports/" + reportId + "/policy";
+        String username = "your_nexus_iq_username";
+        String password = "your_nexus_iq_password";
 
         try {
-            String responseJson = sendGetRequest(url);
+            String responseJson = sendGetRequest(url, username, password);
             List<PolicyDetail> policyDetails = extractPolicyDetails(responseJson);
             writeToCSV(policyDetails, "policy_details.csv");
             System.out.println("CSV file created successfully.");
@@ -31,8 +38,13 @@ public class NexusIQReportExporter {
         }
     }
 
-    private static String sendGetRequest(String url) throws IOException {
-        HttpClient httpClient = HttpClients.createDefault();
+    private static String sendGetRequest(String url, String username, String password) throws IOException {
+        CredentialsProvider credsProvider = new BasicCredentialsProvider();
+        credsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
+        CloseableHttpClient httpClient = HttpClients.custom()
+                .setDefaultCredentialsProvider(credsProvider)
+                .build();
+
         HttpGet httpGet = new HttpGet(url);
         httpGet.setHeader("Accept", "application/json");
         HttpResponse response = httpClient.execute(httpGet);
