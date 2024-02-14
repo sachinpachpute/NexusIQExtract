@@ -70,6 +70,8 @@ public class NexusIQReportExporter {
 
         for (JsonNode componentNode : componentsNode) {
             String componentDisplayName = componentNode.path("displayName").asText();
+            String componentHash = componentNode.path("hash").asText();
+            String componentGroupId = componentNode.path("componentIdentifier").path("coordinates").path("groupId").asText();
             boolean directDependency = componentNode.path("dependencyData").path("directDependency").asBoolean();
             String policyName = null;
             int threatLevel = 0;
@@ -89,17 +91,17 @@ public class NexusIQReportExporter {
                 threatCategory = violationNode.path("policyThreatCategory").asText();
             }
 
-            policyDetails.add(new PolicyDetail(applicationName, componentDisplayName, directDependency, threatLevel, threatCategory, policyName));
+            policyDetails.add(new PolicyDetail(applicationName, componentDisplayName, directDependency, threatLevel, threatCategory, policyName, componentHash, componentGroupId));
         }
         return policyDetails;
     }
 
     private static void writeToCSV(List<PolicyDetail> policyDetails, String fileName) throws IOException {
         try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(fileName)))) {
-            writer.println("Application, Component, Dependency, Threat level,Threat Category, Policy Name");
+            writer.println("Application, Component, Dependency, Threat level,Threat Category, Policy Name, Component Hash, Component Group ID");
             for (PolicyDetail detail : policyDetails) {
                 writer.println(detail.getApplicationName() + "," + detail.getComponentDisplayName() + "," + detail.getDependency() + ","+ detail.getThreatLevel() + "," +
-                        detail.getThreatCategory() + "," + detail.getPolicyName());
+                        detail.getThreatCategory() + "," + detail.getPolicyName() + "," + detail.getComponentHash() + "," + detail.getComponentGroupId());
             }
         }
     }
@@ -108,17 +110,21 @@ public class NexusIQReportExporter {
         private int threatLevel;
         private String threatCategory;
         private String policyName;
-        private String componentDisplayName;
         private String applicationName;
         private String dependency;
+        private String componentDisplayName;
+        private String componentHash;
+        private String componentGroupId;
 
-        public PolicyDetail(String applicationName, String componentDisplayName, boolean directDependency, int threatLevel, String threatCategory, String policyName) {
+        public PolicyDetail(String applicationName, String componentDisplayName, boolean directDependency, int threatLevel, String threatCategory, String policyName, String componentHash, String componentGroupId) {
             this.threatLevel = threatLevel;
             this.threatCategory = threatCategory;
             this.policyName = policyName;
             this.componentDisplayName = componentDisplayName;
             this.applicationName = applicationName;
             this.dependency = directDependency? "Direct":"Transitive";
+            this.componentHash = componentHash;
+            this.componentGroupId = componentGroupId;
         }
 
         public int getThreatLevel() {
@@ -133,16 +139,24 @@ public class NexusIQReportExporter {
             return policyName;
         }
 
-        public String getComponentDisplayName() {
-            return componentDisplayName;
-        }
-
         public String getApplicationName() {
             return applicationName;
         }
 
         public String getDependency() {
             return dependency;
+        }
+
+        public String getComponentDisplayName() {
+            return componentDisplayName;
+        }
+
+        public String getComponentHash() {
+            return componentHash;
+        }
+
+        public String getComponentGroupId() {
+            return componentGroupId;
         }
     }
 }
