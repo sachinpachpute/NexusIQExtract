@@ -20,3 +20,9 @@
     "isLatestVersion": true
   }
 ]
+
+
+// Construct the request body JSON
+String requestBodyPrefix = "{\"components\":";
+String jsonRequestBody = gson.toJson(requestBody);
+String fullRequestBody = requestBodyPrefix + jsonRequestBody;
