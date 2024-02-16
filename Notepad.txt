@@ -1,4 +1,18 @@
-int responseCode = connection.getResponseCode();
+public static boolean isReportReady(String applicationInternalId, String resultId) throws IOException {
+        // Construct the URL for the evaluation status endpoint
+        String evaluationStatusUrl = "http://localhost:8070/api/v2/evaluation/applications/" + applicationInternalId + "/results/" + resultId;
+
+        // Create a URL object
+        URL url = new URL(evaluationStatusUrl);
+
+        // Open a connection
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+        // Set request method to GET
+        connection.setRequestMethod("GET");
+
+        // Get the HTTP response code
+        int responseCode = connection.getResponseCode();
 
         // Check if the response code indicates success (200 OK)
         if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -8,6 +22,7 @@ int responseCode = connection.getResponseCode();
             // The report is not ready or there was an error
             return false;
         }
+    }
 
 
 1.0
