@@ -102,10 +102,10 @@ public class NexusReportExporter {
 
             List <ComponentVersion> componentVersions = getComponentVersionObjectList(jsonResponse);
 
-            evaluateComponentVersionsForPolicyViolation(componentVersions);
-
+            if(!componentVersions.isEmpty()){
+                evaluateComponentVersionsForPolicyViolation(componentVersions);
+            }
             return componentVersions;
-
         }
     }
 
@@ -140,10 +140,11 @@ public class NexusReportExporter {
             os.write(input, 0, input.length);
         }
 
+        StringBuilder response = new StringBuilder();
         // Read the response from the server
         try (BufferedReader br = new BufferedReader(
                 new InputStreamReader(conn.getInputStream(), "utf-8"))) {
-            StringBuilder response = new StringBuilder();
+
             String responseLine;
             while ((responseLine = br.readLine()) != null) {
                 response.append(responseLine.trim());
@@ -155,7 +156,85 @@ public class NexusReportExporter {
         // Close the connection
         conn.disconnect();
 
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode rootNode = objectMapper.readTree(response.toString());
+        String resultsUrl = rootNode.path("resultsUrl").asText();
 
+        try{
+            //Wait for 2 seconds because report generally is not ready to be accessed immediately and you get 404 error in that case
+            //Thread.sleep(2000);
+            if(checkIfEvaluatioResultIsReady(resultsUrl)){
+                String jsonResponse = connectToNexusIQ(new URL(NEXUS_IQ_URL + "/" + resultsUrl));
+                populateEvaluationResultData(componentVersions, jsonResponse);
+            } else {
+                Thread.sleep(1000);
+                if(checkIfEvaluatioResultIsReady(resultsUrl)){
+                    String jsonResponse = connectToNexusIQ(new URL(NEXUS_IQ_URL + "/" + resultsUrl));
+                    populateEvaluationResultData(componentVersions, jsonResponse);
+                } else {
+                    populateEvaluationResultData(componentVersions, null);
+                }
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static boolean checkIfEvaluatioResultIsReady(String resultsUrl) throws IOException{
+        URL urlObj = new URL(NEXUS_IQ_URL + "/" + resultsUrl);
+
+        // Open a connection
+        HttpURLConnection connection = (HttpURLConnection) urlObj.openConnection();
+
+        // Set request method to GET
+        connection.setRequestMethod("GET");
+        String userCredentials = IQ_USERNAME + ":" + IQ_PASSWORD;
+        String basicAuth = "Basic " + new String(Base64.getEncoder().encode(userCredentials.getBytes()));
+        connection.setRequestProperty("Authorization", basicAuth);
+
+        // Get the HTTP response code
+        int responseCode = connection.getResponseCode();
+
+        // Check if the response code indicates success (200 OK)
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            // The report is ready
+            return true;
+        } else {
+            // The report is not ready or there was an error
+            return false;
+        }
+    }
+
+    private static void populateEvaluationResultData(List<ComponentVersion> componentVersions, String jsonResponse) throws IOException{
+        if(jsonResponse == null){
+            return;
+        }
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode rootNode = objectMapper.readTree(jsonResponse);
+        JsonNode resultsNode = rootNode.path("results");
+
+        String policyName = null;
+        int threatLevel = 0;
+        String threatCategory = null;
+
+        for (ComponentVersion componentVersion : componentVersions) {
+            for (JsonNode resultNode : resultsNode) {
+                String nodeHash = resultNode.path("component").path("hash").asText();
+                if(nodeHash.equalsIgnoreCase(componentVersion.getHash())){
+                    if(resultNode.has("policyData") && !resultNode.path("policyData").path("policyViolations").isEmpty()){
+                        JsonNode policyViolations = resultNode.path("policyData").path("policyViolations");
+                        for (JsonNode policyViolation : policyViolations) {
+                            if (policyViolation.path("threatLevel").asInt() <= threatLevel){
+                                continue;
+                            }
+                            threatLevel = policyViolation.path("threatLevel").asInt();
+                            policyName = policyViolation.path("policyName").asText();
+                            //constraintName =
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static List<ComponentVersion> getComponentVersionObjectList(String responseJson) throws IOException {
@@ -194,7 +273,7 @@ public class NexusReportExporter {
 
     private static boolean isValidSemanticPattern(String version) {
         // Regular expression pattern for semantic versioning (semver) with optional pre-release and build metadata
-        String semverPattern = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-([0-9A-Za-z_-]+(?:\\.[0-9A-Za-z_-]+)*))?(?:\\+[0-9A-Za-z-]+)?$";
+        String semverPattern = "^(?:0|1\\.0(?:\\.0)?(?:-[A-Za-z]+(?:-[A-Za-z0-9]+)?)?|2\\.6(?:\\.0)?(?:-[A-Za-z]+(?:-[A-Za-z0-9]+)?)?|3\\.(?:0|1\\.1|4)(?:\\.(?:0|1))?((?:-[A-Za-z]+(?:-[A-Za-z0-9]+)?)|(?:\\.[A-Za-z0-9]+(?:_[A-Za-z0-9]+)?(?:-[A-Za-z0-9]+)?))?(?:\\.[A-Za-z0-9]+(?:_[A-Za-z0-9]+)?(?:-[A-Za-z0-9]+)?)?|5\\.(?:2\\.5(?:\\.[A-Za-z0-9]+)?|4\\.17(?:\\.Final)?|20\\.30?|2[012]?\\.30?))$";
         // Compile the pattern
         Pattern pattern = Pattern.compile(semverPattern);
         // Match the version string against the pattern
