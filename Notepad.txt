@@ -22,7 +22,8 @@
 ]
 
 
-// Construct the request body JSON
-String requestBodyPrefix = "{\"components\":";
-String jsonRequestBody = gson.toJson(requestBody);
-String fullRequestBody = requestBodyPrefix + jsonRequestBody;
+// Convert the request body JsonObject to a string
+String jsonRequestBody = requestBody.toString();
+
+// Concatenate the prefix with the JSON request body
+String fullRequestBody = "{\"components\":" + jsonRequestBody + "}";
