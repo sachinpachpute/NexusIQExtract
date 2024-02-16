@@ -1,5 +1,7 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,6 +19,16 @@ public class NexusPostRequest {
         String iqServerUrl = "http://your-iq-server-url";
         String endpoint = "/api/v2/evaluation/applications/" + applicationId;
 
+        // Prepare the JSON request body
+        JsonObject requestBody = new JsonObject();
+        JsonArray componentsArray = new JsonArray();
+        for (ComponentVersion cv : componentVersions) {
+            JsonObject componentObject = new JsonObject();
+            componentObject.addProperty("hash", cv.getHash());
+            componentsArray.add(componentObject);
+        }
+        requestBody.add("components", componentsArray);
+
         // Prepare the HTTP POST request
         URL url = new URL(iqServerUrl + endpoint);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -25,18 +37,15 @@ public class NexusPostRequest {
         conn.setRequestProperty("Authorization", "Basic " + encodeCredentials(username, password));
         conn.setDoOutput(true);
 
-        // Convert the list of ComponentVersion objects to JSON
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        String jsonBody = gson.toJson(componentVersions);
-
         // Write the JSON request body to the request
         try (OutputStream os = conn.getOutputStream()) {
-            byte[] input = jsonBody.getBytes("utf-8");
+            byte[] input = requestBody.toString().getBytes("utf-8");
             os.write(input, 0, input.length);
         }
 
         // Read the response from the server
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"))) {
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(conn.getInputStream(), "utf-8"))) {
             StringBuilder response = new StringBuilder();
             String responseLine;
             while ((responseLine = br.readLine()) != null) {
@@ -60,9 +69,10 @@ public class NexusPostRequest {
         String applicationId = "your-application-id";
         String username = "your-username";
         String password = "your-password";
-        List<ComponentVersion> componentVersions = new ArrayList<>();
-        componentVersions.add(new ComponentVersion("646da0e0fa6c56ff2f1b81601fb8934393718217", "1.0.0"));
-        componentVersions.add(new ComponentVersion("c43f6e6bfa79b56e04a8898a923c3cf7144dd460", "2.0.0"));
+        List<ComponentVersion> componentVersions = List.of(
+                new ComponentVersion("646da0e0fa6c56ff2f1b81601fb8934393718217", "1.0.0"),
+                new ComponentVersion("c43f6e6bfa79b56e04a8898a923c3cf7144dd460", "2.0.0")
+        );
 
         try {
             performEvaluation(applicationId, username, password, componentVersions);
@@ -84,16 +94,8 @@ public class NexusPostRequest {
             return hash;
         }
 
-        public void setHash(String hash) {
-            this.hash = hash;
-        }
-
         public String getVersion() {
             return version;
-        }
-
-        public void setVersion(String version) {
-            this.version = version;
         }
     }
 }
