@@ -45,19 +45,30 @@ public static boolean isReportReady(String applicationInternalId, String resultI
 ^(?:0|1\.0(?:\.0)?(?:-[A-Za-z]+(?:-[A-Za-z0-9]+)?)?|2\.6(?:\.0)?(?:-[A-Za-z]+(?:-[A-Za-z0-9]+)?)?|3\.(?:0|1\.1|4)(?:\.(?:0|1))?((?:-[A-Za-z]+(?:-[A-Za-z0-9]+)?)|(?:\.[A-Za-z0-9]+(?:_[A-Za-z0-9]+)?(?:-[A-Za-z0-9]+)?))?(?:\.[A-Za-z0-9]+(?:_[A-Za-z0-9]+)?(?:-[A-Za-z0-9]+)?)?|5\.(?:2\.5(?:\.[A-Za-z0-9]+)?|4\.17(?:\.Final)?|20\.30?|2[012]?\.30?))$
 
 
-{
-  "components": [
-    {
-      "hash": "null",
-      "componentIdentifier": {
-        "format": "maven2",
-        "coordinates": {
-          "groupId": "com.thoughtworks.xstream",
-          "artifactId": "xstream",
-          "version": "1.4.20",
-          "extension": "jar"
-        }
-      }
+// Construct the request body JSON string
+StringBuilder requestBodyBuilder = new StringBuilder();
+requestBodyBuilder.append("{\n");
+requestBodyBuilder.append("  \"components\": [\n");
+for (int i = 0; i < components.size(); i++) {
+    Component component = components.get(i);
+    requestBodyBuilder.append("    {\n");
+    requestBodyBuilder.append("      \"componentIdentifier\": {\n");
+    requestBodyBuilder.append("        \"format\": \"" + component.getCoordinates().getFormat() + "\",\n");
+    requestBodyBuilder.append("        \"coordinates\": {\n");
+    requestBodyBuilder.append("          \"groupId\": \"" + component.getCoordinates().getGroupId() + "\",\n");
+    requestBodyBuilder.append("          \"artifactId\": \"" + component.getCoordinates().getArtifactId() + "\",\n");
+    requestBodyBuilder.append("          \"version\": \"" + component.getCoordinates().getVersion() + "\",\n");
+    requestBodyBuilder.append("          \"extension\": \"" + component.getCoordinates().getExtension() + "\"\n");
+    requestBodyBuilder.append("        }\n");
+    requestBodyBuilder.append("      }\n");
+    requestBodyBuilder.append("    }");
+    if (i < components.size() - 1) {
+        requestBodyBuilder.append(",");
     }
-  ]
+    requestBodyBuilder.append("\n");
 }
+requestBodyBuilder.append("  ]\n");
+requestBodyBuilder.append("}");
+
+String requestBody = requestBodyBuilder.toString();
+
