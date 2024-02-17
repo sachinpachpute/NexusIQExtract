@@ -139,16 +139,25 @@ public class NexusReportExporter {
         String userCredentials = IQ_USERNAME + ":" + IQ_PASSWORD;
         String basicAuth = "Basic " + new String(Base64.getEncoder().encode(userCredentials.getBytes()));
 
-        // Prepare the JSON request body
-        JsonObject requestBody = new JsonObject();
-        JsonArray componentsArray = new JsonArray();
-        for (Component cv : components) {
-            JsonObject componentHashObject = new JsonObject();
-            componentHashObject.addProperty("hash", cv.getHash());
-            componentsArray.add(componentHashObject);
+        // Construct the request body JSON string
+        StringBuilder requestBodyBuilder = new StringBuilder();
+        requestBodyBuilder.append("{\"components\": [");
+        for (int i = 0; i < components.size(); i++) {
+            Component component = components.get(i);
+            requestBodyBuilder.append("{\"hash\": \"null\",\"componentIdentifier\": {");
+            requestBodyBuilder.append("\"format\": \"" + component.getCoordinates().getFormat() + "\",");
+            requestBodyBuilder.append("\"coordinates\": {");
+            requestBodyBuilder.append("\"groupId\": \"" + component.getCoordinates().getGroupId() + "\",");
+            requestBodyBuilder.append("\"artifactId\": \"" + component.getCoordinates().getArtifactId() + "\",");
+            requestBodyBuilder.append("\"version\": \"" + component.getCoordinates().getVersion() + "\",");
+            requestBodyBuilder.append("\"extension\": \"" + component.getCoordinates().getExtension() + "\"");
+            requestBodyBuilder.append("}}}");
+            if (i < components.size() - 1) {
+                requestBodyBuilder.append(",");
+            }
         }
-
-        requestBody.add("components", componentsArray);
+        requestBodyBuilder.append("]}");
+        String requestBody = requestBodyBuilder.toString();
 
         // Prepare the HTTP POST request
         HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
@@ -190,14 +199,14 @@ public class NexusReportExporter {
             //Thread.sleep(2000);
             if(checkIfEvaluatioResultIsReady(resultsUrl)){
                 String jsonResponse = connectToNexusIQ(new URL(NEXUS_IQ_URL + "/" + resultsUrl));
-                populateEvaluationResultData(componentVersions, jsonResponse);
+                populateEvaluationResultData(components, jsonResponse);
             } else {
                 Thread.sleep(1000);
                 if(checkIfEvaluatioResultIsReady(resultsUrl)){
                     String jsonResponse = connectToNexusIQ(new URL(NEXUS_IQ_URL + "/" + resultsUrl));
-                    populateEvaluationResultData(componentVersions, jsonResponse);
+                    populateEvaluationResultData(components, jsonResponse);
                 } else {
-                    populateEvaluationResultData(componentVersions, null);
+                    populateEvaluationResultData(components, null);
                 }
             }
         } catch (InterruptedException e) {
