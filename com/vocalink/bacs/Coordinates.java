@@ -34,4 +34,19 @@ public class Coordinates {
     public String getExtension() {
         return extension;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        Coordinates other = (Coordinates) obj;
+        return groupId.equals(other.groupId) &&
+                artifactId.equals(other.artifactId) &&
+                version.equals(other.version) &&
+                extension.equals(other.extension);
+    }
 }
