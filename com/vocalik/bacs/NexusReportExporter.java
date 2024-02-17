@@ -12,8 +12,6 @@ import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
@@ -34,16 +32,16 @@ public class NexusReportExporter {
 
     public static void main(String[] args) {
         try {
-            String responseJson = getPolicyViolationsByReportRestAPI();
-            List<Component> components = extractPolicyDetails(responseJson);
-            writeToCSV(components, CSV_FILE_PATH);
+            String reportJson = getApplicationDependencyDataByApplicationPublicIdAndReportId();
+            List<ApplicationDependency> applicationDependencies = parseReportJsonToFormAListOfApplicationDependencies(reportJson);
+            writeToCSV(applicationDependencies, CSV_FILE_PATH);
             System.out.println("CSV file created successfully.");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private static String getPolicyViolationsByReportRestAPI() throws IOException {
+    private static String getApplicationDependencyDataByApplicationPublicIdAndReportId() throws IOException {
 
         URL urlObj = new URL(NEXUS_IQ_URL + "/api/v2/applications/" + APPLICATION_PUBLIC_ID + "/reports/" + REPORT_ID + "/policy");
 
@@ -52,64 +50,91 @@ public class NexusReportExporter {
         return jsonResponse;
     }
 
-    private static List<Component> extractPolicyDetails(String responseJson) throws IOException {
-        List<Component> components = new ArrayList<>();
+    private static List<ApplicationDependency> parseReportJsonToFormAListOfApplicationDependencies(String reportJson) throws IOException {
+        List<ApplicationDependency> applicationDependencies = new ArrayList<>();
         ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode rootNode = objectMapper.readTree(responseJson);
-        JsonNode componentsNode = rootNode.path("components");
+        JsonNode rootNode = objectMapper.readTree(reportJson);
+        JsonNode dependenciesNode = rootNode.path("components");
         String applicationName = rootNode.path("application").path("name").asText();
+        List <PolicyViolation> allPolicyViolations = new LinkedList<>();
+        PolicyViolation highestPolicyViolation = null;
+        Coordinates coordinates = null;
+        List<Component> otherAvailableVersions;
 
-        for (JsonNode componentNode : componentsNode) {
-            String componentDisplayName = componentNode.path("displayName").asText();
-            String componentHash = componentNode.path("hash").asText();
-            String componentGroupId = componentNode.path("componentIdentifier").path("coordinates").path("groupId").asText();
-            String componetArtifactId = componentNode.path("componentIdentifier").path("coordinates").path("artifactId").asText();
-            String currentVersion = componentNode.path("componentIdentifier").path("coordinates").path("version").asText();
-            boolean directDependency = componentNode.path("dependencyData").path("directDependency").asBoolean();
+        for (JsonNode dependencyNode : dependenciesNode) {
+            String dependencyName = dependencyNode.path("displayName").asText();
+            String dependencyPackageUrl = dependencyNode.path("packageUrl").asText();
+            boolean isDirectDependency = dependencyNode.path("dependencyData").path("directDependency").asBoolean();
+            boolean isInnerSource = dependencyNode.path("dependencyData").path("innerSource").asBoolean();
+            String format = dependencyNode.path("componentIdentifier").path("format").asText();
+            String groupId = dependencyNode.path("componentIdentifier").path("coordinates").path("groupId").asText();
+            String artifactId = dependencyNode.path("componentIdentifier").path("coordinates").path("artifactId").asText();
+            String version = dependencyNode.path("componentIdentifier").path("coordinates").path("version").asText();
+            String extension = dependencyNode.path("componentIdentifier").path("coordinates").path("extension").asText();
+
+            coordinates = new Coordinates(format, groupId, artifactId, version, extension);
+
+            String policyId = null;
             String policyName = null;
-            int threatLevel = 0;
-            String threatCategory = null;
+            int policyThreatLevel = 0;
+            String policyThreatCategory = null;
 
-            JsonNode violationsNode = componentNode.path("violations");
+            JsonNode policyViolationsNode = dependencyNode.path("violations");
 
-            if (violationsNode.isEmpty()){
+            if (policyViolationsNode.isEmpty()){
                 continue;
             }
-            for (JsonNode violationNode : violationsNode) {
-                if (violationNode.path("policyThreatLevel").asInt() <= threatLevel){
+            for (JsonNode policyViolationNode : policyViolationsNode) {
+                policyId = policyViolationNode.path("policyId").asText();
+                policyName = policyViolationNode.path("policyName").asText();
+                policyThreatLevel = policyViolationNode.path("policyThreatLevel").asInt();
+                policyThreatCategory = policyViolationNode.path("policyThreatCategory").asText();
+
+                PolicyViolation pv = new PolicyViolation(policyId, policyName, policyThreatCategory, policyThreatLevel);
+                allPolicyViolations.add(pv);
+
+                if (policyViolationNode.path("policyThreatLevel").asInt() <= policyThreatLevel){
                     continue;
+                } else {
+                    highestPolicyViolation = pv;
                 }
-                threatLevel = violationNode.path("policyThreatLevel").asInt();
-                policyName = violationNode.path("policyName").asText();
-                threatCategory = violationNode.path("policyThreatCategory").asText();
             }
 
-            Component component = new Component(applicationName, componentDisplayName, directDependency, threatLevel, threatCategory, policyName, currentVersion, componentHash, componentGroupId, componetArtifactId);
+            ApplicationDependency applicationDependency = new ApplicationDependency(applicationName, dependencyName, dependencyPackageUrl, isDirectDependency, isInnerSource, coordinates);
+            if (!allPolicyViolations.isEmpty()){
+                applicationDependency.setAllPolicyViolations(allPolicyViolations);
+            }
 
-            component.setComponentVersionsList(getObjList_SameComponentDifferentVersions(component));
-            components.add(component);
+            if(highestPolicyViolation != null){
+                applicationDependency.setHighestPolicyViolation(highestPolicyViolation);
+            }
+
+            otherAvailableVersions = getOtherVersionsOfTheComponent(applicationDependency);
+            applicationDependency.setOtherAvailableVersions(otherAvailableVersions);
+
+            applicationDependencies.add(applicationDependency);
         }
-        return components;
+        return applicationDependencies;
     }
 
-    private static List<ComponentVersion> getObjList_SameComponentDifferentVersions(Component component) throws IOException {
+    private static List<Component> getOtherVersionsOfTheComponent(ApplicationDependency applicationDependency) throws IOException {
         {
-            URL urlObj = new URL(NEXUS_RM_URL + "/nexus/service/rest/v1/search?group=" + component.getComponentGroupId() + "&name=" + component.getArtifactId() + "&sort=version");
+            URL urlObj = new URL(NEXUS_RM_URL + "/nexus/service/rest/v1/search?group=" + applicationDependency.getCoordinates().getGroupId() + "&name=" + applicationDependency.getCoordinates().getArtifactId() + "&maven.extension=jar&maven.classifier&sort=version");
 
-            String jsonResponse = connectToNexusRM(urlObj);
+            String jsonResponseComponentVersions = connectToNexusRM(urlObj);
 
             //System.out.println("***** This is for component "+ component.getComponentGroupId()+":"+ component.getArtifactId());
+            List <Component> components = parseJsonToFormAListOfOtherVersionsOfTheComponent(jsonResponseComponentVersions);
 
-            List <ComponentVersion> componentVersions = getComponentVersionObjectList(jsonResponse);
-
-            if(!componentVersions.isEmpty()){
-                evaluateComponentVersionsForPolicyViolation(componentVersions);
+            if(!components.isEmpty()){
+                //populateEachComponentWithSecurityViolationData(components);
+                populateEachComponentWithPolicyViolationData(components);
             }
-            return componentVersions;
+            return components;
         }
     }
 
-    private static void evaluateComponentVersionsForPolicyViolation(List<ComponentVersion> componentVersions) throws IOException {
+    private static void populateEachComponentWithPolicyViolationData(List<Component> components) throws IOException {
         URL urlObj = new URL(NEXUS_IQ_URL + "/api/v2/evaluation/applications/" + APPLICATION_INTERNAL_ID );
         String userCredentials = IQ_USERNAME + ":" + IQ_PASSWORD;
         String basicAuth = "Basic " + new String(Base64.getEncoder().encode(userCredentials.getBytes()));
@@ -117,7 +142,7 @@ public class NexusReportExporter {
         // Prepare the JSON request body
         JsonObject requestBody = new JsonObject();
         JsonArray componentsArray = new JsonArray();
-        for (ComponentVersion cv : componentVersions) {
+        for (Component cv : components) {
             JsonObject componentHashObject = new JsonObject();
             componentHashObject.addProperty("hash", cv.getHash());
             componentsArray.add(componentHashObject);
@@ -206,6 +231,7 @@ public class NexusReportExporter {
     }
 
     private static void populateEvaluationResultData(List<ComponentVersion> componentVersions, String jsonResponse) throws IOException{
+        System.out.println(jsonResponse);
         if(jsonResponse == null){
             return;
         }
@@ -230,6 +256,8 @@ public class NexusReportExporter {
                             threatLevel = policyViolation.path("threatLevel").asInt();
                             policyName = policyViolation.path("policyName").asText();
                             //constraintName =
+                            PolicyViolation violationObj = new PolicyViolation(threatLevel, policyName);
+                            componentVersion.setPolicyViolation(violationObj);
                         }
                     }
                 }
@@ -237,38 +265,35 @@ public class NexusReportExporter {
         }
     }
 
-    private static List<ComponentVersion> getComponentVersionObjectList(String responseJson) throws IOException {
-        List<ComponentVersion> componentVersions = new ArrayList<>();
+    private static List<Component> parseJsonToFormAListOfOtherVersionsOfTheComponent(String responseJson) throws IOException {
+        List<Component> components = new ArrayList<>();
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = objectMapper.readTree(responseJson);
         JsonNode componentsNode = rootNode.path("items");
         List <String> versionsList = new LinkedList<>();
 
+
+
         for (JsonNode componentNode : componentsNode) {
-            JsonNode assetsNode = componentNode.path("assets");
-            String version = null;
-            String hash = null;
-            boolean isLatestVersion = false;
+            //JsonNode assetsNode = componentNode.path("assets");
+            String donloadPackageUrl = componentNode.path("downloadUrl").asText();
+            String format = componentNode.path("format").asText();
+            String groupId = componentNode.path("maven2").path("groupId").asText();
+            String artifactId = componentNode.path("maven2").path("artifactId").asText();
+            String version = componentNode.path("maven2").path("version").asText();
+            String extension = componentNode.path("maven2").path("extension").asText();
+            boolean isLatestAvailableVersion = false;
 
-            for (JsonNode assetNode : assetsNode) {
-                String extension = assetNode.path("maven2").path("extension").asText();
-                String classifier = assetNode.path("maven2").path("classifier").asText();
-
-                if(classifier.isEmpty() && extension.equalsIgnoreCase("jar")){
-                    version = assetNode.path("maven2").path("version").asText();
-                    hash = assetNode.path("checksum").path("sha1").asText();
-
-                    if(!versionsList.contains(version) && isValidSemanticPattern(version)){
-                        ComponentVersion componentVersion = new ComponentVersion(hash, version, isLatestVersion);
-                        componentVersions.add(componentVersion);
-                        versionsList.add(version);
-                    }
-                }
+            if(!versionsList.contains(version) && isValidSemanticPattern(version)){
+                Coordinates coordinates = new Coordinates(format, groupId, artifactId, version, extension);
+                Component component = new Component(donloadPackageUrl, coordinates);
+                components.add(component);
+                versionsList.add(version);
             }
         }
         //Update latest versions
-        markLatestVersion(componentVersions);
-        return componentVersions;
+        markLatestVersion(components);
+        return components;
     }
 
     private static boolean isValidSemanticPattern(String version) {
@@ -282,24 +307,24 @@ public class NexusReportExporter {
         return matcher.matches();
     }
 
-    private static void markLatestVersion(List<ComponentVersion> componentVersions) {
+    private static void markLatestVersion(List<Component> components) {
         //Find latest version
-        String latestVersion = VersionUtils.findLatestVersion(componentVersions);
+        String latestVersion = VersionUtils.findLatestVersion(components);
 
         //Update isLatestVersion property for the component with the latest version
-        for (ComponentVersion componentVersion : componentVersions){
-            if(componentVersion.getVersion().equals(latestVersion)){
-                componentVersion.setLatestVersion(true);
+        for (Component component : components){
+            if(component.getCoordinates().getVersion().equals(latestVersion)){
+                component.setLatestAvailableVersion(true);
             } else {
-                componentVersion.setLatestVersion(false);
+                component.setLatestAvailableVersion(false);
             }
         }
     }
 
-    private static void writeToCSV(List<Component> components, String fileName) throws IOException {
+    private static void writeToCSV(List<ApplicationDependency> applicationDependencies, String fileName) throws IOException {
         try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(fileName)))) {
             writer.println("Application, Component, Dependency, Threat level,Threat Category, Policy Name, Current Version, Component Hash, Component Group ID");
-            for (Component detail : components) {
+            for (ApplicationDependency detail : applicationDependencies) {
                 writer.println(detail.getApplicationName() + "," + detail.getComponentDisplayName() + "," + detail.getDependency() + ","+ detail.getThreatLevel() + "," +
                         detail.getThreatCategory() + "," + detail.getPolicyName() + "," + detail.getCurrentVersion() + "," + detail.getComponentHash() + "," + detail.getComponentGroupId());
             }
