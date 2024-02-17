@@ -3,85 +3,73 @@ package com.vocalink.bacs;
 import java.util.List;
 
 public class Component {
-    private int threatLevel;
-    private String threatCategory;
-    private String policyName;
-    private String applicationName;
-    private String dependency;
-    private String componentDisplayName;
-    private String currentVersion;
-    private String latestVersion;
-    private String nextVersionWithNoPolicyViolation;
-    private String componentHash;
-    private String componentGroupId;
-    private String artifactId;
-    private List<ComponentVersion> componentVersionsList;
+    //private String name;
+    private String downloadPackageUrl;
+    Coordinates coordinates;
+    private List<PolicyViolation> allPolicyViolations;
+    private PolicyViolation highestPolicyViolation;
+    private List<SecurityIssue> securityIssues;
+    boolean isLatestAvailableVersion = false;
 
-    public Component(String applicationName, String componentDisplayName, boolean directDependency, int threatLevel, String threatCategory, String policyName, String currentVersion, String componentHash, String componentGroupId, String artifactId) {
-        this.threatLevel = threatLevel;
-        this.threatCategory = threatCategory;
-        this.policyName = policyName;
-        this.componentDisplayName = componentDisplayName;
-        this.applicationName = applicationName;
-        this.dependency = directDependency? "Direct":"Transitive";
-        this.currentVersion = currentVersion;
-        this.componentHash = componentHash;
-        this.componentGroupId = componentGroupId;
-        this.artifactId = artifactId;
+    public Component(String downloadPackageUrl, Coordinates coordinates) {
+        //this.name = name;
+        this.downloadPackageUrl = downloadPackageUrl;
+        this.coordinates = coordinates;
     }
 
-    public int getThreatLevel() {
-        return threatLevel;
+    /*public String getName() {
+        return name;
     }
 
-    public String getThreatCategory() {
-        return threatCategory;
+    public void setName(String name) {
+        this.name = name;
+    }*/
+
+    public String getDownloadPackageUrl() {
+        return downloadPackageUrl;
     }
 
-    public String getPolicyName() {
-        return policyName;
+    public void setDownloadPackageUrl(String downloadPackageUrl) {
+        this.downloadPackageUrl = downloadPackageUrl;
     }
 
-    public String getApplicationName() {
-        return applicationName;
+    public Coordinates getCoordinates() {
+        return coordinates;
     }
 
-    public String getDependency() {
-        return dependency;
+    public void setCoordinates(Coordinates coordinates) {
+        this.coordinates = coordinates;
     }
 
-    public String getComponentDisplayName() {
-        return componentDisplayName;
-    }
-    public String getCurrentVersion() {
-        return currentVersion;
+    public List<PolicyViolation> getAllPolicyViolations() {
+        return allPolicyViolations;
     }
 
-    public String getLatestVersion() {
-        return latestVersion;
+    public void setAllPolicyViolations(List<PolicyViolation> allPolicyViolations) {
+        this.allPolicyViolations = allPolicyViolations;
     }
 
-    public String getNextVersionWithNoPolicyViolation() {
-        return nextVersionWithNoPolicyViolation;
+    public PolicyViolation getHighestPolicyViolation() {
+        return highestPolicyViolation;
     }
 
-    public String getComponentHash() {
-        return componentHash;
+    public void setHighestPolicyViolation(PolicyViolation highestPolicyViolation) {
+        this.highestPolicyViolation = highestPolicyViolation;
     }
 
-    public String getComponentGroupId() {
-        return componentGroupId;
+    public List<SecurityIssue> getSecurityIssues() {
+        return securityIssues;
     }
 
-    public String getArtifactId() {
-        return artifactId;
+    public void setSecurityIssues(List<SecurityIssue> securityIssues) {
+        this.securityIssues = securityIssues;
     }
 
-    public List<ComponentVersion> getComponentVersionsList() {
-        return componentVersionsList;
+    public boolean isLatestAvailableVersion() {
+        return isLatestAvailableVersion;
     }
 
-    public void setComponentVersionsList(List<ComponentVersion> componentVersionsList) {
-        this.componentVersionsList = componentVersionsList;
+    public void setLatestAvailableVersion(boolean latestAvailableVersion) {
+        isLatestAvailableVersion = latestAvailableVersion;
     }
 }
