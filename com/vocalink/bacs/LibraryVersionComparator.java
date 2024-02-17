@@ -1,23 +1,7 @@
-package com.vocalink.bacs;
-
-import java.util.Collections;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class LibraryVersionComparator {
-
-    public static String findLatestVersion(List<String> versions) {
-        if (versions == null || versions.isEmpty()) {
-            return null;
-        }
-
-        // Sort the versions using custom comparator
-        Collections.sort(versions, LibraryVersionComparator::compareVersions);
-
-        // Return the last (highest) version
-        return versions.get(versions.size() - 1);
-    }
 
     public static int compareVersions(String version1, String version2) {
         // Regular expression pattern for parsing semantic versioning (semver)
@@ -52,46 +36,58 @@ public class LibraryVersionComparator {
     }
 
     private static int compareSemverVersions(String version1, String version2) {
-        // Your comparison logic for semantic versions goes here
-        // This method should handle comparing major, minor, and patch versions,
-        // as well as pre-release identifiers if present
-
-        // For demonstration purposes, let's assume version1 is greater if it has a higher major version
-        // and if major versions are equal, version1 is greater if it has a higher minor version
-
         // Split versions into parts
-        String[] parts1 = version1.split("\\.|\\-");
-        String[] parts2 = version2.split("\\.|\\-");
+        String[] parts1 = version1.split("[.-]");
+        String[] parts2 = version2.split("[.-]");
 
-        // Compare major versions
-        int major1 = Integer.parseInt(parts1[0]);
-        int major2 = Integer.parseInt(parts2[0]);
-        if (major1 != major2) {
-            return Integer.compare(major1, major2);
+        // Compare major, minor, and patch versions
+        for (int i = 0; i < 3; i++) {
+            int num1 = Integer.parseInt(parts1[i]);
+            int num2 = Integer.parseInt(parts2[i]);
+            if (num1 != num2) {
+                return Integer.compare(num1, num2);
+            }
         }
 
-        // Compare minor versions
-        int minor1 = Integer.parseInt(parts1[1]);
-        int minor2 = Integer.parseInt(parts2[1]);
-        if (minor1 != minor2) {
-            return Integer.compare(minor1, minor2);
+        // Compare pre-release versions
+        if (parts1.length > 3 || parts2.length > 3) {
+            // Determine maximum number of pre-release identifiers
+            int maxIdentifiers = Math.max(parts1.length, parts2.length) - 3;
+
+            for (int i = 3; i < maxIdentifiers + 3; i++) {
+                // Check if both versions have pre-release identifiers at this position
+                if (i < parts1.length && i < parts2.length) {
+                    String identifier1 = parts1[i];
+                    String identifier2 = parts2[i];
+                    int comparison = identifier1.compareTo(identifier2);
+                    if (comparison != 0) {
+                        return comparison;
+                    }
+                } else if (i < parts1.length) {
+                    // Version 1 has additional pre-release identifiers
+                    return -1;
+                } else {
+                    // Version 2 has additional pre-release identifiers
+                    return 1;
+                }
+            }
         }
 
-        // Compare patch versions
-        int patch1 = Integer.parseInt(parts1[2]);
-        int patch2 = Integer.parseInt(parts2[2]);
-        return Integer.compare(patch1, patch2);
+        // Versions are equal up to the pre-release part
+        return 0;
     }
 
     public static void main(String[] args) {
-        // Example list of version strings
-        List<String> versions = List.of("1.2.3", "1.2.3-alpha", "1.2-alpha", "invalid-version", "1.2-abc");
+        // Example version strings
+        String version1 = "1.2.3";
+        String version2 = "1.2.3-alpha";
+        String version3 = "1.2-alpha";
+        String version4 = "invalid-version";
+        String version5 = "1.2-abc";
 
-        // Find the latest version
-        String latestVersion = findLatestVersion(versions);
-
-        // Print the latest version
-        System.out.println("Latest version: " + latestVersion);
+        // Test the version strings
+        System.out.println("Comparison of version " + version1 + " and " + version2 + ": " + compareVersions(version1, version2)); // 1
+        System.out.println("Comparison of version " + version2 + " and " + version3 + ": " + compareVersions(version2, version3)); // 1
+        System.out.println("Comparison of version " + version4 + " and " + version5 + ": " + compareVersions(version4, version5)); // -1
     }
 }
-
