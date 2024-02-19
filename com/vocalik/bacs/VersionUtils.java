@@ -4,14 +4,14 @@ import java.util.List;
 
 public class VersionUtils {
 
-    public static String findLatestVersion(List<ComponentVersion> componentVersions) {
+    public static String findLatestVersion(List<Component> components) {
 
         String latestVersion = null;
-        for (ComponentVersion componentVersion : componentVersions) {
+        for (Component component : components) {
             //System.out.println("comparing "+componentVersion.getVersion()+" with "+latestVersion);
 
-            if (latestVersion == null || isNewerVersion(componentVersion.getVersion(), latestVersion)) {
-                latestVersion = componentVersion.getVersion();
+            if (latestVersion == null || LibraryVersionComparator.compareVersions(component.getCoordinates().getVersion(), latestVersion)==1) {
+                latestVersion = component.getCoordinates().getVersion();
             }
         }
         return latestVersion;
