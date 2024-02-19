@@ -1,9 +1,12 @@
+package com.vocalink.bacs;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class LibraryVersionComparator {
 
     public static int compareVersions(String version1, String version2) {
+        System.out.println(version1 +" compared against "+version2 +" 1 means 1st one is latest ");
         // Regular expression pattern for parsing semantic versioning (semver)
         String semverPattern = "^(\\d+)\\.(\\d+)\\.(\\d+)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+([0-9A-Za-z-]+))?$";
 
@@ -31,6 +34,7 @@ public class LibraryVersionComparator {
             return -1;
         }
 
+        System.out.println(version1 +" compared against "+version2 +" 1 means 1st one is latest and the output is: "+version1.compareTo(version2));
         // For non-semantic versions, use lexicographical comparison
         return version1.compareTo(version2);
     }
