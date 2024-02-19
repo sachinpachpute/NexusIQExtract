@@ -419,11 +419,22 @@ public class NexusReportExporter {
             writer.println("Application, Component, Dependency, Threat level, Policy Name, Current Version, Highest Available Version, " +
                     "Next Version With No Policy Violation");
             for (ApplicationDependency detail : applicationDependencies) {
+
+                System.out.println(detail.getDependencyName());
+
+                //If there is no version available without any policy violations then mention what is the threat level of the policy if we upgrade to the latest available version
+                int policyThreatLevelForLatestAvailableVersion = 0;
+                if (detail.getNextVersionWithNoPolicyViolation() == null){
+                    if(!detail.getOtherAvailableVersions().isEmpty() && detail.getOtherAvailableVersions().get(0).getHighestPolicyViolation() !=null){
+                        policyThreatLevelForLatestAvailableVersion = detail.getOtherAvailableVersions().get(0).getHighestPolicyViolation().getPolicyThreatLevel();
+                    }
+                }
+
                 writer.println(detail.getApplicationName() + "," + detail.getDependencyName() + "," + (detail.isDirectDependency()? "Direct": "Transitive")
                         + ","+ detail.getHighestPolicyViolation().getPolicyThreatLevel() + "," + detail.getHighestPolicyViolation().getPolicyName()
                         + "," + detail.getCoordinates().getVersion() + "," + detail.getHighestAvailableVersion()
                         + "," + (detail.getNextVersionWithNoPolicyViolation()==null?"Not Available (Latest available version has policy violation " +
-                        "with Threat Level " + detail.getOtherAvailableVersions().get(0).getHighestPolicyViolation().getPolicyThreatLevel():detail.getNextVersionWithNoPolicyViolation()));
+                        "with Threat Level " + policyThreatLevelForLatestAvailableVersion:detail.getNextVersionWithNoPolicyViolation()));
             }
         }
     }
