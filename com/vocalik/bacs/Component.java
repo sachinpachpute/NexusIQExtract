@@ -8,7 +8,7 @@ public class Component {
     Coordinates coordinates;
     private List<PolicyViolation> allPolicyViolations;
     private PolicyViolation highestPolicyViolation;
-    private List<SecurityIssue> securityIssues;
+    private List<SecurityIssue> allSecurityIssues;
     boolean isLatestAvailableVersion = false;
 
     public Component(String downloadPackageUrl, Coordinates coordinates) {
@@ -56,20 +56,19 @@ public class Component {
     public void setHighestPolicyViolation(PolicyViolation highestPolicyViolation) {
         this.highestPolicyViolation = highestPolicyViolation;
     }
-
-    public List<SecurityIssue> getSecurityIssues() {
-        return securityIssues;
-    }
-
-    public void setSecurityIssues(List<SecurityIssue> securityIssues) {
-        this.securityIssues = securityIssues;
-    }
-
     public boolean isLatestAvailableVersion() {
         return isLatestAvailableVersion;
     }
 
     public void setLatestAvailableVersion(boolean latestAvailableVersion) {
         isLatestAvailableVersion = latestAvailableVersion;
+    }
+
+    public void setAllSecurityIssues(List<SecurityIssue> allSecurityIssues) {
+        this.allSecurityIssues = allSecurityIssues;
+    }
+
+    public List<SecurityIssue> getAllSecurityIssues() {
+        return allSecurityIssues;
     }
 }
