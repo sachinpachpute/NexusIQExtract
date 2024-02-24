@@ -2,6 +2,7 @@ package com.vocalink.bacs;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -28,7 +29,13 @@ public class NexusReportExporter {
     private static final String APPLICATION_PUBLIC_ID = "acsw-xval";
     private static final String APPLICATION_INTERNAL_ID = "9fdcfa10d35a4f109e006a7afe1d3519";
     private static final String REPORT_ID = "013c2f60ca4849f8813daa8473aa6431";
-    private static final String CSV_FILE_PATH = "NexusIQReportExporter_list.csv";
+    private static final String CSV_FILE_PATH = "VulnerabilityExport_2.csv";
+
+    /*private static final String APPLICATION_PUBLIC_ID = "psw_refresh";
+    private static final String APPLICATION_INTERNAL_ID = "78b741479d47430898a26b8139adb48b";
+    private static final String REPORT_ID = "54b967c921224f27897ee5567a3f98e5";*/
+
+
 
     public static void main(String[] args) {
         try {
@@ -124,12 +131,92 @@ public class NexusReportExporter {
                 applicationDependency.setHighestPolicyViolation(highestPolicyViolation);
             }
 
+            //Get Next Version with No Policy Violations from Nexus IQ
+            populateNextVersionWithNoPolicyViolation(applicationDependency);
+
             otherAvailableVersions = getOtherVersionsOfTheComponent(applicationDependency);
             applicationDependency.setOtherAvailableVersions(otherAvailableVersions);
 
             applicationDependencies.add(applicationDependency);
         }
         return applicationDependencies;
+    }
+
+    private static void populateNextVersionWithNoPolicyViolation(ApplicationDependency applicationDependency) throws IOException {
+
+        URL urlObj = new URL(NEXUS_IQ_URL + "/api/v2/components/remediation/application/" + APPLICATION_INTERNAL_ID);
+        String userCredentials = IQ_USERNAME + ":" + IQ_PASSWORD;
+        String basicAuth = "Basic " + new String(Base64.getEncoder().encode(userCredentials.getBytes()));
+
+        // Construct the request body JSON string
+        StringBuilder requestBodyBuilder = new StringBuilder();
+
+            requestBodyBuilder.append("    {\n");
+            requestBodyBuilder.append("      \"componentIdentifier\": {\n");
+            requestBodyBuilder.append("        \"format\": \"maven\",\n");
+            requestBodyBuilder.append("        \"coordinates\": {\n");
+            requestBodyBuilder.append("          \"artifactId\": \"" + applicationDependency.getCoordinates().getArtifactId() + "\",\n");
+            requestBodyBuilder.append("          \"extension\": \"" + applicationDependency.getCoordinates().getExtension() + "\",\n");
+            requestBodyBuilder.append("          \"groupId\": \"" + applicationDependency.getCoordinates().getGroupId() + "\",\n");
+            requestBodyBuilder.append("          \"version\": \"" + applicationDependency.getCoordinates().getVersion() + "\"\n");
+            requestBodyBuilder.append("        }\n");
+            requestBodyBuilder.append("      }\n");
+            requestBodyBuilder.append("    }");
+
+
+        String requestBody = requestBodyBuilder.toString();
+
+        // Prepare the HTTP POST request
+        HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("Authorization", basicAuth);
+        conn.setDoOutput(true);
+
+        //System.out.println(requestBody.toString());
+
+        // Write the JSON request body to the request
+        try (OutputStream os = conn.getOutputStream()) {
+            byte[] input = requestBody.toString().getBytes("utf-8");
+            os.write(input, 0, input.length);
+        }
+
+        StringBuilder response = new StringBuilder();
+        // Read the response from the server
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(conn.getInputStream(), "utf-8"))) {
+
+            String responseLine;
+            while ((responseLine = br.readLine()) != null) {
+                response.append(responseLine.trim());
+            }
+            //System.out.println("Response from Nexus IQ Server:");
+            //System.out.println(response.toString());
+        }
+
+        // Close the connection
+        conn.disconnect();
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode rootNode = objectMapper.readTree(response.toString());
+        JsonNode versionChanges = rootNode.path("remediation").path("versionChanges");
+
+        String nextVersionWithNoViolations = null;
+        String nextVersionWithNoViolationsWithDependencies = null;
+
+        if(!versionChanges.isEmpty()){
+            for(JsonNode versionChange : versionChanges){
+                if(versionChange.has("type") && versionChange.path("type").asText().equalsIgnoreCase("next-no-violations")){
+                    nextVersionWithNoViolations = versionChange.path("data").path("component")
+                            .path("componentIdentifier").path("coordinates").path("version").asText();
+                } else if(versionChange.has("type") && versionChange.path("type").asText().equalsIgnoreCase("next-no-violations-with-dependencies")){
+                    nextVersionWithNoViolationsWithDependencies = versionChange.path("data").path("component")
+                            .path("componentIdentifier").path("coordinates").path("version").asText();
+                }
+            }
+        }
+        applicationDependency.setNextVersionWithNoPolicyViolation(nextVersionWithNoViolations);
+        applicationDependency.setNextVersionWithNoPolicyViolationWithDependencies(nextVersionWithNoViolationsWithDependencies);
     }
 
     private static List<Component> getOtherVersionsOfTheComponent(ApplicationDependency applicationDependency) throws IOException {
@@ -286,6 +373,8 @@ public class NexusReportExporter {
         String url;
         String cwe;
 
+        StringBuilder stringBuilder = new StringBuilder();
+
         for (Component component : components) {
             for (JsonNode resultNode : resultsNode) {
                 JsonNode componentIdentifier = resultNode.path("component").path("componentIdentifier");
@@ -327,7 +416,8 @@ public class NexusReportExporter {
                         component.setAllPolicyViolations(allPolicyViolations);
                         component.setHighestPolicyViolation(highestPolicyViolation);
                     } else {
-                        applicationDependency.setNextVersionWithNoPolicyViolation(version);
+                        stringBuilder.append(version + "; ");
+                        //applicationDependency.setNextVersionWithNoPolicyViolation(version);
                     }
                     if(resultNode.has("securityData") && !resultNode.path("securityData").path("securityIssues").isEmpty()){
                         JsonNode securityIssues = resultNode.path("securityData").path("securityIssues");
@@ -350,6 +440,7 @@ public class NexusReportExporter {
                 }
             }
         }
+        applicationDependency.setMoreVersionsWithNoPolicyViolation(stringBuilder.toString());
     }
 
     private static List<Component> parseJsonToFormAListOfOtherVersionsOfTheComponent(String responseJson, ApplicationDependency applicationDependency) throws IOException {
@@ -416,25 +507,53 @@ public class NexusReportExporter {
 
     private static void writeToCSV(List<ApplicationDependency> applicationDependencies, String fileName) throws IOException {
         try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(fileName)))) {
-            writer.println("Application, Component, Dependency, Threat level, Policy Name, Current Version, Highest Available Version, " +
-                    "Next Version With No Policy Violation");
+            writer.println("Application, " +
+                    "Component, Dependency, " +
+                    "Threat level, Policy Name, " +
+                    "Associated CVEs, Current Version, " +
+                    "Highest Available Version, " +
+                    "Next Version With No Policy Violation, " +
+                    "Next Version With No Policy Violation including Dependencies, " +
+                    "More Versions With No Policy Violation");
             for (ApplicationDependency detail : applicationDependencies) {
 
                 System.out.println(detail.getDependencyName());
 
                 //If there is no version available without any policy violations then mention what is the threat level of the policy if we upgrade to the latest available version
-                int policyThreatLevelForLatestAvailableVersion = 0;
+                /*int policyThreatLevelForLatestAvailableVersion = 0;
                 if (detail.getNextVersionWithNoPolicyViolation() == null){
                     if(!detail.getOtherAvailableVersions().isEmpty() && detail.getOtherAvailableVersions().get(0).getHighestPolicyViolation() !=null){
                         policyThreatLevelForLatestAvailableVersion = detail.getOtherAvailableVersions().get(0).getHighestPolicyViolation().getPolicyThreatLevel();
+                    }
+                }*/
+
+                StringBuilder cveCvssList = new StringBuilder();
+                List<SecurityIssue>  securityIssues;
+                //Iterate through all versions of this dependencies
+                for(Component comp : detail.getOtherAvailableVersions()){
+                    //Pick the currently used version
+                    if(comp.getCoordinates().equals(detail.getCoordinates())){
+                        //Form a string of all 'CVE (CVSS)' for this dependency
+                        securityIssues = comp.getAllSecurityIssues();
+                        if(securityIssues!=null && !securityIssues.isEmpty()){
+                            for(SecurityIssue cve : securityIssues){
+                                cveCvssList.append(cve.getReference())
+                                        .append(" (CVSS:")
+                                        .append(cve.getSeverity())
+                                        .append(");  ");
+                            }
+                        }
                     }
                 }
 
                 writer.println(detail.getApplicationName() + "," + detail.getDependencyName() + "," + (detail.isDirectDependency()? "Direct": "Transitive")
                         + ","+ detail.getHighestPolicyViolation().getPolicyThreatLevel() + "," + detail.getHighestPolicyViolation().getPolicyName()
-                        + "," + detail.getCoordinates().getVersion() + "," + detail.getHighestAvailableVersion()
-                        + "," + (detail.getNextVersionWithNoPolicyViolation()==null?"Not Available (Latest available version has policy violation " +
-                        "with Threat Level " + policyThreatLevelForLatestAvailableVersion:detail.getNextVersionWithNoPolicyViolation()));
+                        + "," + cveCvssList + "," + detail.getCoordinates().getVersion() + "," + detail.getHighestAvailableVersion()
+                        + "," + detail.getNextVersionWithNoPolicyViolation()
+                        + "," + detail.getNextVersionWithNoPolicyViolationWithDependencies()
+                        /*+ "," + (detail.getNextVersionWithNoPolicyViolation()==null?"Not Available (Latest available version has policy violation " +
+                        "with Threat Level " + policyThreatLevelForLatestAvailableVersion:detail.getNextVersionWithNoPolicyViolation())*/
+                        + "," + detail.getMoreVersionsWithNoPolicyViolation());
             }
         }
     }
