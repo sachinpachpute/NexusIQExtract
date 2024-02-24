@@ -10,6 +10,8 @@ public class ApplicationDependency {
     private boolean isDirectDependency;
     private boolean isInnerSource;
     private String nextVersionWithNoPolicyViolation;
+    private String nextVersionWithNoPolicyViolationWithDependencies;
+    private String moreVersionsWithNoPolicyViolation;
     private String nextVersionWithNoSecurityIssues;
     private String highestAvailableVersion;
     private List <PolicyViolation> allPolicyViolations;
@@ -72,6 +74,22 @@ public class ApplicationDependency {
 
     public void setNextVersionWithNoPolicyViolation(String nextVersionWithNoPolicyViolation) {
         this.nextVersionWithNoPolicyViolation = nextVersionWithNoPolicyViolation;
+    }
+
+    public String getNextVersionWithNoPolicyViolationWithDependencies() {
+        return nextVersionWithNoPolicyViolationWithDependencies;
+    }
+
+    public void setNextVersionWithNoPolicyViolationWithDependencies(String nextVersionWithNoPolicyViolationWithDependencies) {
+        this.nextVersionWithNoPolicyViolationWithDependencies = nextVersionWithNoPolicyViolationWithDependencies;
+    }
+
+    public String getMoreVersionsWithNoPolicyViolation() {
+        return moreVersionsWithNoPolicyViolation;
+    }
+
+    public void setMoreVersionsWithNoPolicyViolation(String moreVersionsWithNoPolicyViolation) {
+        this.moreVersionsWithNoPolicyViolation = moreVersionsWithNoPolicyViolation;
     }
 
     public String getHighestAvailableVersion() {
