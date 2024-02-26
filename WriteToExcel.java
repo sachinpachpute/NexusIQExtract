@@ -36,9 +36,35 @@ public class WriteToExcel {
             for (ApplicationDependency dependency : applicationDependencies) {
                 Row row = sheet.createRow(rowNumber++);
                 // Write data to cells in the row
-                // For example:
-                // Cell cell = row.createCell(0);
-                // cell.setCellValue(dependency.getName());
+                Cell cell = row.createCell(0); // Application Name
+                cell.setCellValue(dependency.getApplicationName());
+
+                cell = row.createCell(1); // Dependency Name
+                cell.setCellValue(dependency.getDependencyName());
+
+                cell = row.createCell(2); // Dependency Package URL
+                cell.setCellValue(dependency.getDependencyPackageUrl());
+
+                cell = row.createCell(3); // Is Direct Dependency
+                cell.setCellValue(dependency.isDirectDependency());
+
+                cell = row.createCell(4); // Is Inner Source
+                cell.setCellValue(dependency.isInnerSource());
+
+                cell = row.createCell(5); // Next Version With No Policy Violation
+                cell.setCellValue(dependency.getNextVersionWithNoPolicyViolation());
+
+                cell = row.createCell(6); // Next Version With No Policy Violation including Dependencies
+                cell.setCellValue(dependency.getNextVersionWithNoPolicyViolationWithDependencies());
+
+                cell = row.createCell(7); // More Versions With No Policy Violation
+                cell.setCellValue(dependency.getMoreVersionsWithNoPolicyViolation());
+
+                cell = row.createCell(8); // Next Version With No Security Issues
+                cell.setCellValue(dependency.getNextVersionWithNoSecurityIssues());
+
+                cell = row.createCell(9); // Highest Available Version
+                cell.setCellValue(dependency.getHighestAvailableVersion());
             }
 
             // Write the workbook to a file
