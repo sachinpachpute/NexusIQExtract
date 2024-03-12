@@ -3,3 +3,5 @@
 
 =INDEX(GET.WORKBOOK(1),COLUMN(INDIRECT("2:16")),1)
 
+=INDEX(INDIRECT("'" & C8 & "'!H:H"), MATCH(C9, INDIRECT("'" & C8 & "'!B:B"), 0))
+
