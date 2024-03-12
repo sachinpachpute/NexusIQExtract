@@ -5,4 +5,4 @@
 
 =INDEX(INDIRECT("'" & C8 & "'!H:H"), MATCH(C9, INDIRECT("'" & C8 & "'!B:B"), 0))
 
-=INDEX(ColumnBData, MATCH(0, COUNTIF($C$8:C8, ColumnBData), 0))
+=INDEX(ComponentData, MATCH(0, COUNTIF($C$8:C8, ComponentData), 0))
