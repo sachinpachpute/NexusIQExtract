@@ -1,5 +1,1 @@
- String[] dropdownOptions = new String[appNames.length + 1];
-        dropdownOptions[0] = "<Select Application>"; // Add default value
-        for (int i = 0; i < appNames.length; i++) {
-            dropdownOptions[i + 1] = appNames[i];
-        }
+=RIGHT(GET.WORKBOOK(1),LEN(GET.WORKBOOK(1))-FIND("]",GET.WORKBOOK(1),1))
