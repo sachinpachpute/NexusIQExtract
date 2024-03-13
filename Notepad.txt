@@ -8,3 +8,5 @@
 =INDEX(ComponentData, MATCH(0, COUNTIF($C$8:C8, ComponentData), 0))
 
 =COUNTIF(INDIRECT("'" & C8 & "'!E:E"), "Architecture-Quality")
+
+=INDIRECT("'" & E29 & "'!B:B")
