@@ -10,3 +10,4 @@
 =COUNTIF(INDIRECT("'" & C8 & "'!E:E"), "Architecture-Quality")
 
 =INDIRECT("'" & E29 & "'!B:B")
+=INDIRECT("'" & E29 & "'!B2:B")
