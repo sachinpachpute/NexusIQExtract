@@ -11,4 +11,4 @@
 
 =INDIRECT("'" & E29 & "'!B:B")
 =INDIRECT("'" & E29 & "'!B2:B")
-=IF(E29="", "", INDEX(INDIRECT("'" & E29 & "'!B2:B"), 1))
+=IF(E29="", "", E29 & "," & TEXTJOIN(",", TRUE, INDIRECT("'" & E29 & "'!B2:B")))
