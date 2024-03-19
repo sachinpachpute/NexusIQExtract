@@ -14,3 +14,5 @@
 =IF(E29="", "", E29 & "," & TEXTJOIN(",", TRUE, INDIRECT("'" & E29 & "'!B2:B")))
 
 =IF(F12<>"", SUM(INDIRECT("'"&F12&"'!M:M")), "")
+
+=IF(F12="All Applications", SUMPRODUCT(SUMIF(INDIRECT("'"&Sheet1:Sheet3&"'!M:M"), "<>")), IF(F12<>"", SUM(INDIRECT("'"&F12&"'!M:M")), ""))
