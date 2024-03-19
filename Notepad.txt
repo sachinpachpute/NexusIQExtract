@@ -16,6 +16,8 @@
 =IF(F12<>"", SUM(INDIRECT("'"&F12&"'!M:M")), "")
 
 =IF(F12="All Applications", SUMPRODUCT(SUMIF(INDIRECT("'"&Sheet1:Sheet3&"'!M:M"), "<>")), IF(F12<>"", SUM(INDIRECT("'"&F12&"'!M:M")), ""))
+=IF(F12="All Applications", SUM(INDIRECT("'" & INDEX(F:F, 2) & "'!M:M"):INDIRECT("'" & INDEX(F:F, 51) & "'!M:M")), IF(F12<>"", SUM(INDIRECT("'"&F12&"'!M:M")), ""))
+
 
 =IF(E29<>"All Applications", INDIRECT("'" & E29 & "'!B:B"), "")
 
