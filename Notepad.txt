@@ -23,3 +23,7 @@
 
 =E29="All Applications"
 
+
+
+=IF(F12<>"All Applications", INDIRECT("'" & F12 & "'!B:B"), "")
+
