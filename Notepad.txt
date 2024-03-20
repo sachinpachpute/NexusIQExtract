@@ -32,6 +32,7 @@
 
 =IF(F12<>"All Applications", INDEX(INDIRECT("'" & F12 & "'!B:B"), MATCH(F30, INDIRECT("'" & F12 & "'!E:E"), 0)), "")
 =IF(F12<>"All Applications", FILTER(INDIRECT("'" & F12 & "'!B:B"), INDIRECT("'" & F12 & "'!E:E")=F30), "")
+=IF(F12<>"All Applications", INDEX(INDIRECT("'" & F12 & "'!B:B"), MATCH(F30, INDIRECT("'" & F12 & "'!E:E"), 0)), "")
 
 
 
