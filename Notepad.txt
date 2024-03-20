@@ -29,3 +29,6 @@
 Select Application,=INDIRECT("'" & F12 & "'!B:B")
 Select Application,=IF(F12<>"All Applications", INDIRECT("'" & F12 & "'!B:B"), "")
 
+
+=SUM(IFERROR(INDIRECT("'"&INDEX(GET.WORKBOOK(1),ROW(INDIRECT("2:"&COUNT(GET.WORKBOOK(1)))))&"'!M:M"),0))
+
