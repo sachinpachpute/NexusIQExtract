@@ -27,4 +27,5 @@
 
 =IF(F12<>"All Applications", INDIRECT("'" & F12 & "'!B:B"), "")
 Select Application,=INDIRECT("'" & F12 & "'!B:B")
+Select Application,=IF(F12<>"All Applications", INDIRECT("'" & F12 & "'!B:B"), "")
 
