@@ -28,6 +28,7 @@
 =IF(F12<>"All Applications", INDIRECT("'" & F12 & "'!B:B"), "")
 
 =COUNTIF(INDIRECT("'" & F12 & "'!E:E"), "Security-Critical")
+=IF(F12<>"All Applications", COUNTIF(INDIRECT("'" & F12 & "'!E:E"), "Security-Critical"), "")
 
 
 
