@@ -40,4 +40,4 @@
 
 =SUM(COUNTIF(INDIRECT("'" & mic:refdata & "'!E:E"), "Security-Critical"))
 
-
+=IF(F12<>"All Applications", COUNTIF(INDIRECT("'" & F12 & "'!E:E"), "Security-Critical"), IF(F12="All Applications", SUMPRODUCT(COUNTIF(INDIRECT("'"&INDEX(GET.WORKBOOK(1),MATCH("mic",GET.WORKBOOK(1),0)+1):INDIRECT("'"&INDEX(GET.WORKBOOK(1),MATCH("grs",GET.WORKBOOK(1),0)-1)&"'!E:E"), "Security-Critical")), ""))
