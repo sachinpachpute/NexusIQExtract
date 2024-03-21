@@ -38,4 +38,6 @@
     COUNTIF(INDIRECT("'" & F12 & "'!E:E"), "Security-Critical"),
     SUM(COUNTIF(INDIRECT("'" & Z1:Z30 & "'!E:E"), "Security-Critical")))
 
+=SUM(COUNTIF(INDIRECT("'" & mic:refdata & "'!E:E"), "Security-Critical"))
+
 
