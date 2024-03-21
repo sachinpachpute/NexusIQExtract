@@ -3,13 +3,13 @@ package com.vocalink.bacs;
 public class SecurityIssue {
     private String source;
     private String reference;
-    private String severity;
+    private double severity;
     private String status;
     private String url;
     private String threatCategory;
     private String cwe;
 
-    public SecurityIssue(String source, String reference, String severity, String status, String url, String threatCategory, String cwe) {
+    public SecurityIssue(String source, String reference, double severity, String status, String url, String threatCategory, String cwe) {
         this.source = source;
         this.reference = reference;
         this.severity = severity;
@@ -35,11 +35,11 @@ public class SecurityIssue {
         this.reference = reference;
     }
 
-    public String getSeverity() {
+    public double getSeverity() {
         return severity;
     }
 
-    public void setSeverity(String severity) {
+    public void setSeverity(double severity) {
         this.severity = severity;
     }
 
