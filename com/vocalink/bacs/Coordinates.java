@@ -49,4 +49,15 @@ public class Coordinates {
                 version.equals(other.version) &&
                 extension.equals(other.extension);
     }
+
+    @Override
+    public String toString() {
+        return "Coordinates{" +
+                "format='" + format + '\'' +
+                ", groupId='" + groupId + '\'' +
+                ", artifactId='" + artifactId + '\'' +
+                ", version='" + version + '\'' +
+                ", extension='" + extension + '\'' +
+                '}';
+    }
 }
