@@ -1,1 +1,46 @@
-=INDEX(GET.WORKBOOK(1),1,1):INDEX(GET.WORKBOOK(1),20,1)
+=RIGHT(GET.WORKBOOK(1),LEN(GET.WORKBOOK(1))-FIND("]",GET.WORKBOOK(1),1))
+
+
+=INDEX(GET.WORKBOOK(1),COLUMN(INDIRECT("2:16")),1)
+
+=INDEX(INDIRECT("'" & C8 & "'!H:H"), MATCH(C9, INDIRECT("'" & C8 & "'!B:B"), 0))
+
+=INDEX(ComponentData, MATCH(0, COUNTIF($C$8:C8, ComponentData), 0))
+
+=COUNTIF(INDIRECT("'" & C8 & "'!E:E"), "Architecture-Quality")
+
+=INDIRECT("'" & E29 & "'!B:B")
+=INDIRECT("'" & E29 & "'!B2:B")
+=IF(E29="", "", E29 & "," & TEXTJOIN(",", TRUE, INDIRECT("'" & E29 & "'!B2:B")))
+
+=IF(F12<>"", SUM(INDIRECT("'"&F12&"'!M:M")), "")
+
+=IF(F12="All Applications", SUMPRODUCT(SUMIF(INDIRECT("'"&Sheet1:Sheet3&"'!M:M"), "<>")), IF(F12<>"", SUM(INDIRECT("'"&F12&"'!M:M")), ""))
+=IF(F12="All Applications", SUM(INDIRECT("'"&F$2:F$51&"'!M:M")), IF(F12<>"", SUM(INDIRECT("'"&F12&"'!M:M")), ""))
+
+
+=IF(E29<>"All Applications", INDIRECT("'" & E29 & "'!B:B"), "")
+
+=E29="All Applications"
+
+
+
+=IF(F12<>"All Applications", INDIRECT("'" & F12 & "'!B:B"), "")
+
+=COUNTIF(INDIRECT("'" & F12 & "'!E:E"), "Security-Critical")
+=IF(F12<>"All Applications", COUNTIF(INDIRECT("'" & F12 & "'!E:E"), "Security-Critical"), "")
+
+=IF(F12<>"All Applications", INDEX(INDIRECT("'" & F12 & "'!B:B"), MATCH(F30, INDIRECT("'" & F12 & "'!E:E"), 0)), "")
+=IF(F12<>"All Applications", FILTER(INDIRECT("'" & F12 & "'!B:B"), INDIRECT("'" & F12 & "'!E:E")=F30), "")
+=IF(F12<>"All Applications", INDEX(INDIRECT("'" & F12 & "'!B:B"), MATCH(F30, INDIRECT("'" & F12 & "'!E:E"), 0)), "")
+
+=IF(F12<>"All Applications",
+    COUNTIF(INDIRECT("'" & F12 & "'!E:E"), "Security-Critical"),
+    SUM(COUNTIF(INDIRECT("'" & Z1:Z30 & "'!E:E"), "Security-Critical")))
+
+=SUM(COUNTIF(INDIRECT("'" & mic:refdata & "'!E:E"), "Security-Critical"))
+
+=SUM(IF(ISNUMBER(MATCH(Z1:Z30, INDIRECT("'" & Z1:Z30 & "'!B:B"), 0)), COUNTIF(INDIRECT("'" & Z1:Z30 & "'!E:E"), "Security-Critical"), 0))
+
+=IF(F12<>"All Applications", INDEX(INDIRECT("'" & F12 & "'!H:H"), MATCH(F30, INDIRECT("'" & F12 & "'!B:B"), 0)), ZZ100)
+=IFERROR(IF(F12<>"All Applications", INDEX(INDIRECT("'" & F12 & "'!H:H"), MATCH(F30, INDIRECT("'" & F12 & "'!B:B"), 0)), 0), 0)
