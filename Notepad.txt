@@ -43,3 +43,4 @@
 =SUM(IF(ISNUMBER(MATCH(Z1:Z30, INDIRECT("'" & Z1:Z30 & "'!B:B"), 0)), COUNTIF(INDIRECT("'" & Z1:Z30 & "'!E:E"), "Security-Critical"), 0))
 
 =IF(F12<>"All Applications", INDEX(INDIRECT("'" & F12 & "'!H:H"), MATCH(F30, INDIRECT("'" & F12 & "'!B:B"), 0)), ZZ100)
+=IFERROR(IF(F12<>"All Applications", INDEX(INDIRECT("'" & F12 & "'!H:H"), MATCH(F30, INDIRECT("'" & F12 & "'!B:B"), 0)), 0), 0)
