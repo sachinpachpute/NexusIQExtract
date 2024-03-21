@@ -5,6 +5,7 @@ import java.util.List;
 public class ApplicationDependency {
 
     private String applicationName;
+    private String applicationInternalId;
     private String dependencyName;
     private String dependencyPackageUrl;
     private boolean isDirectDependency;
@@ -15,12 +16,14 @@ public class ApplicationDependency {
     private String nextVersionWithNoSecurityIssues;
     private String highestAvailableVersion;
     private List <PolicyViolation> allPolicyViolations;
+    private List<SecurityIssue> allSecurityIssues;
     private PolicyViolation highestPolicyViolation;
     private Coordinates coordinates;
     private List<Component> otherAvailableVersions;
 
-    public ApplicationDependency(String applicationName, String dependencyName, String dependencyPackageUrl, boolean isDirectDependency, boolean isInnerSource, Coordinates coordinates) {
+    public ApplicationDependency(String applicationName, String applicationInternalId, String dependencyName, String dependencyPackageUrl, boolean isDirectDependency, boolean isInnerSource, Coordinates coordinates) {
         this.applicationName = applicationName;
+        this.applicationInternalId = applicationInternalId;
         this.dependencyName = dependencyName;
         this.dependencyPackageUrl = dependencyPackageUrl;
         this.isDirectDependency = isDirectDependency;
@@ -34,6 +37,14 @@ public class ApplicationDependency {
 
     public void setApplicationName(String applicationName) {
         this.applicationName = applicationName;
+    }
+
+    public String getApplicationInternalId() {
+        return applicationInternalId;
+    }
+
+    public void setApplicationInternalId(String applicationInternalId) {
+        this.applicationInternalId = applicationInternalId;
     }
 
     public String getDependencyName() {
@@ -146,5 +157,13 @@ public class ApplicationDependency {
 
     public void setNextVersionWithNoSecurityIssues(String nextVersionWithNoSecurityIssues) {
         this.nextVersionWithNoSecurityIssues = nextVersionWithNoSecurityIssues;
+    }
+
+    public void setAllSecurityIssues(List<SecurityIssue> allSecurityIssues) {
+        this.allSecurityIssues = allSecurityIssues;
+    }
+
+    public List<SecurityIssue> getAllSecurityIssues() {
+        return allSecurityIssues;
     }
 }
