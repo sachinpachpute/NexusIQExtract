@@ -46,4 +46,5 @@
 =IFERROR(IF(F12<>"All Applications", INDEX(INDIRECT("'" & F12 & "'!H:H"), MATCH(F30, INDIRECT("'" & F12 & "'!B:B"), 0)), 0), 0)
 
 =COUNTIF(Sheet1!E:E, "Security-Critical") + COUNTIF(Sheet2!E:E, "Security-Critical") + COUNTIF(Sheet3!E:E, "Security-Critical")
+=SUMPRODUCT(COUNTIF(INDIRECT("'" & Z2:Z32 & "'!E:E"), "Security-Critical"))
 
