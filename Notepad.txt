@@ -54,3 +54,5 @@
 
 =IFERROR(INDEX(INDIRECT("'" & F12 & "'!G:G"), SMALL(IF(INDIRECT("'" & F12 & "'!B:B")=F30, ROW(INDIRECT("'" & F12 & "'!B:B"))-ROW(INDIRECT("'" & F12 & "'!B1")), ""), ROW(1:1))+1), "")
 =IFERROR(INDEX(INDIRECT("'" & F12 & "'!G:G"), MATCH(1, (INDIRECT("'" & F12 & "'!B:B")=F30)*(ROW(INDIRECT("'" & F12 & "'!B:B"))>ROW(INDIRECT("'" & F12 & "'!B1"))), 0)), "")
+
+=IFERROR(INDEX(INDIRECT("'" & F12 & "'!B:B"), MATCH(F30, INDIRECT("'" & F12 & "'!B:B"), 0)), 0)
