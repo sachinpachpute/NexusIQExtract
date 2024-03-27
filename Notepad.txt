@@ -59,5 +59,6 @@
 =SUMPRODUCT(--(INDIRECT("'" & F12 & "'!A:A")=F30), --(INDIRECT("'" & F12 & "'!C:C")>=INDIRECT("'" & F12 & "'!B:B")))
 =IF(ROW(A1)>COUNTIF(INDIRECT("'" & F12 & "'!B:B"), F30), "", INDEX(INDIRECT("'" & F12 & "'!B:D"), SMALL(IF(INDIRECT("'" & F12 & "'!B:B")=F30, ROW(INDIRECT("'" & F12 & "'!B:B"))-ROW(INDIRECT("'" & F12 & "'!B1"))+1), ROW(A1)), COLUMN(A1)))
 =IF(ROW(B60)>COUNTIF(INDIRECT("'" & F12 & "'!B:B"), F30), "", INDEX(INDIRECT("'" & F12 & "'!B:D"), SMALL(IF(INDIRECT("'" & F12 & "'!B:B")=F30, ROW(INDIRECT("'" & F12 & "'!B:B"))-ROW(INDIRECT("'" & F12 & "'!B1"))+1), ROW(B60)), COLUMN(B60)))
+=IF(ROW(B60)-ROW($B$60)+1>COUNTIF(INDIRECT("'" & F12 & "'!B:B"), F30), "", INDEX(INDIRECT("'" & F12 & "'!B:D"), MATCH(F30, INDIRECT("'" & F12 & "'!B:B"), 0), COLUMN(B60)))
 
 
