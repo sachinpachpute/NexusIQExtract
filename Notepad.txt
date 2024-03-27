@@ -56,5 +56,6 @@
 =IFERROR(INDEX(INDIRECT("'" & F12 & "'!G:G"), MATCH(1, (INDIRECT("'" & F12 & "'!B:B")=F30)*(ROW(INDIRECT("'" & F12 & "'!B:B"))>ROW(INDIRECT("'" & F12 & "'!B1"))), 0)), "")
 
 =SUMPRODUCT(--(INDIRECT("'" & F12 & "'!A:A")=F30), --(INDIRECT("'" & F12 & "'!C:C")>=INDIRECT("'" & F12 & "'!B:B")))
-=COUNTIF(INDIRECT("'" & F12 & "'!B:B"), F30)
+=IF(ROW(A1)>COUNTIF(INDIRECT("'" & F12 & "'!B:B"), F30), "", INDEX(INDIRECT("'" & F12 & "'!B:D"), SMALL(IF(INDIRECT("'" & F12 & "'!B:B")=F30, ROW(INDIRECT("'" & F12 & "'!B:B"))-ROW(INDIRECT("'" & F12 & "'!B1"))+1), ROW(A1)), COLUMN(A1)))
+
 
