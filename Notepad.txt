@@ -44,3 +44,46 @@
 
 =IF(F12<>"All Applications", INDEX(INDIRECT("'" & F12 & "'!H:H"), MATCH(F30, INDIRECT("'" & F12 & "'!B:B"), 0)), ZZ100)
 =IFERROR(IF(F12<>"All Applications", INDEX(INDIRECT("'" & F12 & "'!H:H"), MATCH(F30, INDIRECT("'" & F12 & "'!B:B"), 0)), 0), 0)
+
+
+=COUNTIF(Sheet1!E:E, "Security-Critical") + COUNTIF(Sheet2!E:E, "Security-Critical") + COUNTIF(Sheet3!E:E, "Security-Critical")
+=SUMPRODUCT(COUNTIF(INDIRECT("'" & Z2:Z32 & "'!E:E"), "Security-Critical"))
+
+=IFERROR(INDEX(INDIRECT("'" & F12 & "'!G:G"), MATCH(F30, INDIRECT("'" & F12 & "'!B:B"), 0)), 0)
+
+=IFERROR(INDEX(INDIRECT("'" & F12 & "'!G:G"), SMALL(IF(INDIRECT("'" & F12 & "'!B:B")=F30, ROW(INDIRECT("'" & F12 & "'!B:B"))-ROW(INDIRECT("'" & F12 & "'!B1")), ""), ROW(1:1))), "")
+
+=IFERROR(INDEX(INDIRECT("'" & F12 & "'!G:G"), SMALL(IF(INDIRECT("'" & F12 & "'!B:B")=F30, ROW(INDIRECT("'" & F12 & "'!B:B"))-ROW(INDIRECT("'" & F12 & "'!B1")), ""), ROW(1:1))+1), "")
+=IFERROR(INDEX(INDIRECT("'" & F12 & "'!G:G"), MATCH(1, (INDIRECT("'" & F12 & "'!B:B")=F30)*(ROW(INDIRECT("'" & F12 & "'!B:B"))>ROW(INDIRECT("'" & F12 & "'!B1"))), 0)), "")
+
+=SUMPRODUCT(--(INDIRECT("'" & F12 & "'!A:A")=F30), --(INDIRECT("'" & F12 & "'!C:C")>=INDIRECT("'" & F12 & "'!B:B")))
+=IF(ROW(A1)>COUNTIF(INDIRECT("'" & F12 & "'!B:B"), F30), "", INDEX(INDIRECT("'" & F12 & "'!B:D"), SMALL(IF(INDIRECT("'" & F12 & "'!B:B")=F30, ROW(INDIRECT("'" & F12 & "'!B:B"))-ROW(INDIRECT("'" & F12 & "'!B1"))+1), ROW(A1)), COLUMN(A1)))
+=IF(ROW(B60)>COUNTIF(INDIRECT("'" & F12 & "'!B:B"), F30), "", INDEX(INDIRECT("'" & F12 & "'!B:D"), SMALL(IF(INDIRECT("'" & F12 & "'!B:B")=F30, ROW(INDIRECT("'" & F12 & "'!B:B"))-ROW(INDIRECT("'" & F12 & "'!B1"))+1), ROW(B60)), COLUMN(B60)))
+=IF(ROW(B60)-ROW($B$60)+1>COUNTIF(INDIRECT("'" & F12 & "'!B:B"), F30), "", INDEX(INDIRECT("'" & F12 & "'!B:D"), MATCH(F30, INDIRECT("'" & F12 & "'!B:B"), 0), COLUMN(B60)))
+------------------------------------------------------------
+
+Document doc = Jsoup.parse(htmlTable);
+            Element table = doc.select("table").first();
+            Elements rows = table.select("tr");
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Table Data");
+
+            int rowNum = 0;
+            for (Element row : rows) {
+                Row excelRow = sheet.createRow(rowNum++);
+                Elements cells = row.select("td");
+                int colNum = 0;
+                for (Element cell : cells) {
+                    Cell excelCell = excelRow.createCell(colNum++);
+                    excelCell.setCellValue(cell.text());
+                }
+            }
+
+            // Save the workbook to a file
+            try (FileOutputStream fileOut = new FileOutputStream("TableData.xlsx")) {
+                workbook.write(fileOut);
+                System.out.println("Excel file created successfully!");
+            }
+
+            workbook.close();
