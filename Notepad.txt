@@ -121,3 +121,8 @@ public class ConfluenceTableReader {
         }
     }
 }
+
+
+-------
+
+{"id":"229183421","type":"attachment","status":"current","title":"Book1.xlsx","body":{"view":{"value":"","representation":"storage","_expandable":{"webresource":"","content":"/rest/api/content/229183421"}},"_expandable":{"editor":"","export_view":"","styled_view":"","storage":"","anonymous_export_view":""}},"metadata":{"mediaType":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},"extensions":{"mediaType":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","fileSize":16191,"comment":""},"_links":{"webui":"/display/OT/Test-1?preview=%2F229346885%2F229183421%2FBook1.xlsx","download":"/download/attachments/229346885/Book1.xlsx?version=1&modificationDate=1712140370122&api=v2","collection":"/rest/api/content","base":"https://confluence.vocalink.co.uk","context":"","self":"https://confluence.vocalink.co.uk/rest/api/content/229183421"},"_expandable":{"container":"/rest/api/content/229346885","operations":"","children":"/rest/api/content/229183421/child","restrictions":"/rest/api/content/229183421/restriction/byOperation","history":"/rest/api/content/229183421/history","ancestors":"","version":"","descendants":"/rest/api/content/229183421/descendant","space":"/rest/api/space/OT"}}
