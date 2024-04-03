@@ -62,15 +62,28 @@
 =IF(ROW(B60)-ROW($B$60)+1>COUNTIF(INDIRECT("'" & F12 & "'!B:B"), F30), "", INDEX(INDIRECT("'" & F12 & "'!B:D"), MATCH(F30, INDIRECT("'" & F12 & "'!B:B"), 0), COLUMN(B60)))
 ------------------------------------------------------------
 
- try {
-            JSONObject json = new JSONObject(jsonResponse);
-            JSONObject view = json.getJSONObject("body").getJSONObject("view");
-            String tableHtml = view.getString("value");
+Document doc = Jsoup.parse(htmlTable);
+            Element table = doc.select("table").first();
+            Elements rows = table.select("tr");
 
-            // Parse the HTML table content (you can use a library like JSoup)
-            // For simplicity, let's just print the raw HTML here
-            System.out.println("Table data from Confluence page:");
-            System.out.println(tableHtml);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Table Data");
+
+            int rowNum = 0;
+            for (Element row : rows) {
+                Row excelRow = sheet.createRow(rowNum++);
+                Elements cells = row.select("td");
+                int colNum = 0;
+                for (Element cell : cells) {
+                    Cell excelCell = excelRow.createCell(colNum++);
+                    excelCell.setCellValue(cell.text());
+                }
+            }
+
+            // Save the workbook to a file
+            try (FileOutputStream fileOut = new FileOutputStream("TableData.xlsx")) {
+                workbook.write(fileOut);
+                System.out.println("Excel file created successfully!");
+            }
+
+            workbook.close();
