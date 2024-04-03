@@ -85,3 +85,39 @@ try {
 https://confluence.vocalink.co.uk/display/OT/Test-1
 
 229346885
+
+----------------
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+
+public class ConfluenceTableReader {
+    public static void main(String[] args) {
+        String baseUrl = "https://confluence.vocalink.co.uk"; // Replace with your Confluence base URL
+        String username = "your_username"; // Replace with your Confluence username
+        String password = "your_password"; // Replace with your Confluence password
+        String pageId = "229346885"; // Replace with the actual page ID
+
+        try {
+            HttpClient httpClient = HttpClients.createDefault();
+            HttpGet request = new HttpGet(baseUrl + "/rest/api/content/" + pageId + "?expand=body.view");
+            request.addHeader("Authorization", "Basic " + java.util.Base64.getEncoder().encodeToString((username + ":" + password).getBytes()));
+
+            HttpResponse response = httpClient.execute(request);
+            String responseBody = EntityUtils.toString(response.getEntity());
+
+            // Parse the JSON response to extract the table data
+            // You'll need to implement this part based on your specific requirements
+            // For example, use a JSON parser library or regex to extract the table content
+
+            System.out.println("Table data from Confluence page:");
+            // Print the extracted table data to the console
+            // Modify this part to format and display the data as needed
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
