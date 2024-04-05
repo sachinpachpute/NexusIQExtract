@@ -46,11 +46,35 @@ public class NexusReportExporter {
     public static void main(String[] args) {
         try {
             Map<String, String> applications = Configuration.getApplications();
+            Workbook workbook = WorkbookFactory.create(true);
+
+            /*if (new File(CSV_FILE_PATH).exists()) {
+                workbook = WorkbookFactory.create(new FileInputStream(CSV_FILE_PATH));
+            } else {
+                workbook = new XSSFWorkbook(); // Create a new workbook if it doesn't exist
+            }*/
+
+            // Create a new worksheet with the specified name
+            Sheet sheet = workbook.createSheet("Catalogue");
+
+            // Write the common heading row
+            Row headingRow = sheet.createRow(0);
+            String[] columnNames = {"Application", "Component", "Dependency", "Threat level", "Policy Name", "Constraint Name",
+                    "Constraint Reason", "Current Version", "Highest Available Version",
+                    "Next Version With No Policy Violation",
+                    "Next Version With No Policy Violation including Dependencies",
+                    "More Versions With No Policy Violation", "CVE Count"};
+            for (int i = 0; i < columnNames.length; i++) {
+                Cell cell = headingRow.createCell(i);
+                cell.setCellValue(columnNames[i]);
+            }
+
             //createSummaryWorksheet(CSV_FILE_PATH, applications);
             for (Map.Entry<String, String > entry : applications.entrySet()){
                 String id = entry.getKey();
                 String publicId = entry.getValue();
                 String reportId = null;
+
                 //Get the latest reports ID. We will use release report but there is an option to choose other stages like build and develop
                 reportId = getReportIdForGivenApplication(id, "release");
                 if (reportId == null){
@@ -66,7 +90,9 @@ public class NexusReportExporter {
                             applicationDependencies = parseReportJsonToFormAListOfApplicationDependencies(reportJson);
                         }
                     }
-                    writeToExcel(applicationDependencies, CSV_FILE_PATH, publicId);
+
+                    //writeToExcel(applicationDependencies, CSV_FILE_PATH, publicId);
+                    writeToExcel(applicationDependencies, workbook, CSV_FILE_PATH);
                 }
             }
 
@@ -652,11 +678,12 @@ public class NexusReportExporter {
         }
     }
 
-    private static void writeToExcel(List<ApplicationDependency> applicationDependencies, String fileName, String worksheetName) throws IOException {
-        Workbook workbook;
+    //private static void writeToExcel(List<ApplicationDependency> applicationDependencies, String fileName, String worksheetName) throws IOException {
+    private static void writeToExcel(List<ApplicationDependency> applicationDependencies, Workbook workbook, String fileName) throws IOException {
+
         try {
             // Check if the workbook already exists
-            if (new File(fileName).exists()) {
+            /*if (new File(fileName).exists()) {
                 workbook = WorkbookFactory.create(new FileInputStream(fileName));
             } else {
                 workbook = new XSSFWorkbook(); // Create a new workbook if it doesn't exist
@@ -675,10 +702,11 @@ public class NexusReportExporter {
             for (int i = 0; i < columnNames.length; i++) {
                 Cell cell = headingRow.createCell(i);
                 cell.setCellValue(columnNames[i]);
-            }
+            }*/
 
             // Write data to the worksheet
-            int rowNumber = 1; // Start from row 1 after the heading row
+            Sheet sheet = workbook.getSheet("Catalogue");
+            int rowNumber = sheet.getLastRowNum()+1; // Start from row 1 after the heading row
             for (ApplicationDependency dependency : applicationDependencies) {
 
                 int index = 0;
