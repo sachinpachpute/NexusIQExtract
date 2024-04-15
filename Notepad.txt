@@ -62,7 +62,7 @@
 =IF(ROW(B60)-ROW($B$60)+1>COUNTIF(INDIRECT("'" & F12 & "'!B:B"), F30), "", INDEX(INDIRECT("'" & F12 & "'!B:D"), MATCH(F30, INDIRECT("'" & F12 & "'!B:B"), 0), COLUMN(B60)))
 ------------------------------------------------------------
 
-Document doc = Jsoup.parse(htmlTable);
+Document doc = Jsoup.parse(tableHtml);
             Element table = doc.select("table").first();
             Elements rows = table.select("tr");
 
