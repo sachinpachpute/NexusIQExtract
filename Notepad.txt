@@ -87,3 +87,25 @@ Document doc = Jsoup.parse(tableHtml);
             }
 
             workbook.close();
+------------------------------
+
+List<Workflow> workflows = new ArrayList<>();
+
+        // Parse table data and populate Workflow objects
+        Document doc = Jsoup.parse(tableHtml);
+        Element table = doc.select("table").first();
+        Elements rows = table.select("tr");
+
+        for (Element row : rows) {
+            Elements cells = row.select("td");
+            if (cells.size() == 4) { // Assuming each row has 4 cells representing Application, Component, Workflows, Test Cases
+                String application = cells.get(0).text();
+                String component = cells.get(1).text();
+                String workflowsText = cells.get(2).text();
+                String testCases = cells.get(3).text();
+
+                // Create a new Workflow object and add it to the list
+                Workflow workflow = new Workflow(application, component, workflowsText, testCases);
+                workflows.add(workflow);
+            }
+        }
