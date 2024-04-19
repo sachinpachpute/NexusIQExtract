@@ -109,3 +109,16 @@ List<Workflow> workflows = new ArrayList<>();
                 workflows.add(workflow);
             }
         }
+-----------------------
+
+// Method to extract hyperlinks from the cell content
+    private static String extractHyperlinks(Element cell) {
+        StringBuilder result = new StringBuilder();
+        Elements links = cell.select("a[href]");
+        for (Element link : links) {
+            String linkText = link.text();
+            String linkHref = link.attr("href");
+            result.append("<a href='").append(linkHref).append("'>").append(linkText).append("</a>").append(", ");
+        }
+        return result.toString();
+    }
