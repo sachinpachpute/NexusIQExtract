@@ -13,9 +13,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class NexusReportExporter {
 
@@ -63,11 +73,13 @@ public class NexusReportExporter {
                     "Constraint Reason", "Current Version", "Highest Available Version",
                     "Next Version With No Policy Violation",
                     "Next Version With No Policy Violation including Dependencies",
-                    "More Versions With No Policy Violation", "CVE Count"};
+                    "More Versions With No Policy Violation", "CVE Count", "Impacted Workflow", "QA test cases"};
             for (int i = 0; i < columnNames.length; i++) {
                 Cell cell = headingRow.createCell(i);
                 cell.setCellValue(columnNames[i]);
             }
+
+            List<Workflow> workflowData = getWorkflowDataFromConfluence();
 
             //createSummaryWorksheet(CSV_FILE_PATH, applications);
             for (Map.Entry<String, String > entry : applications.entrySet()){
@@ -82,12 +94,12 @@ public class NexusReportExporter {
                 }
                 if(reportId !=null & !id.isEmpty()){
                     String reportJson = getApplicationDependencyDataByApplicationPublicIdAndReportId(publicId, reportId);
-                    List<ApplicationDependency> applicationDependencies = parseReportJsonToFormAListOfApplicationDependencies(reportJson);
+                    List<ApplicationDependency> applicationDependencies = parseReportJsonToFormAListOfApplicationDependencies(reportJson, workflowData);
                     if (applicationDependencies != null && applicationDependencies.size() == 0){
                         reportId = getReportIdForGivenApplication(id, "develop");
                         if(reportId !=null & !id.isEmpty()){
                             reportJson = getApplicationDependencyDataByApplicationPublicIdAndReportId(publicId, reportId);
-                            applicationDependencies = parseReportJsonToFormAListOfApplicationDependencies(reportJson);
+                            applicationDependencies = parseReportJsonToFormAListOfApplicationDependencies(reportJson, workflowData);
                         }
                     }
 
@@ -101,6 +113,67 @@ public class NexusReportExporter {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static List<Workflow> getWorkflowDataFromConfluence() throws IOException {
+        String baseUrl = "https://confluence.vocalink.co.uk"; // Replace with your Confluence base URL
+        String username = "sachin.pachpute"; // Replace with your Confluence username
+        String password = "SachShrav@404"; // Replace with your Confluence password
+        String pageId = "229413820"; // Replace with the actual page ID
+        List<Workflow> workflows = null;
+
+        try {
+            HttpClient httpClient = HttpClients.createDefault();
+            HttpGet request = new HttpGet(baseUrl + "/rest/api/content/" + pageId + "?expand=body.view");
+            request.addHeader("Authorization", "Basic " + java.util.Base64.getEncoder().encodeToString((username + ":" + password).getBytes()));
+
+            HttpResponse response = httpClient.execute(request);
+            String responseBody = EntityUtils.toString(response.getEntity());
+
+            JSONObject json = new JSONObject(responseBody);
+            JSONObject view = json.getJSONObject("body").getJSONObject("view");
+            String tableHtml = view.getString("value");
+
+            workflows = new ArrayList<>();
+
+            // Parse table data and populate Workflow objects
+            Document doc = Jsoup.parse(tableHtml);
+            Element table = doc.select("table").first();
+            Elements rows = table.select("tr");
+
+            for (Element row : rows) {
+                Elements cells = row.select("td");
+                if (cells.size() == 4) { // Assuming each row has 4 cells representing Application, Component, Workflows, Test Cases
+                    String application = cells.get(0).text();
+                    String component = cells.get(1).text();
+                    String workflowsText = cells.get(2).text();
+                    String testCases = extractHyperlinks(cells.get(3));
+
+                    // Create a new Workflow object and add it to the list
+                    Workflow workflow = new Workflow(application, component, workflowsText, testCases);
+                    workflows.add(workflow);
+                }
+            }
+
+            /*for (Workflow workflow : workflows){
+                System.out.println(workflow.getApplicationName()+ ":"+workflow.getDependencyName()+ ":"+workflow.getImpactedWorkflow()+":"+workflow.getTestCase());
+            }*/
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return workflows;
+    }
+
+    // Method to extract hyperlinks from the cell content
+    private static String extractHyperlinks(Element cell) {
+        StringBuilder result = new StringBuilder();
+        Elements links = cell.select("a[href]");
+        for (Element link : links) {
+            String linkText = link.text();
+            String linkHref = link.attr("href");
+            result.append("<a href='").append(linkHref).append("'>").append(linkText).append("</a>").append(", ");
+        }
+        return result.toString();
     }
 
     /*private static void createSummaryWorksheet(String CSV_FILE_PATH, Map<String, String> applications) throws IOException {
@@ -162,7 +235,8 @@ public class NexusReportExporter {
         return jsonResponse;
     }
 
-    private static List<ApplicationDependency> parseReportJsonToFormAListOfApplicationDependencies(String reportJson) throws IOException {
+    private static List<ApplicationDependency> parseReportJsonToFormAListOfApplicationDependencies(String reportJson, List <Workflow> workflows) throws IOException {
+
         List<ApplicationDependency> applicationDependencies = new ArrayList<>();
         List<Component> components = new ArrayList<>();
         ObjectMapper objectMapper = new ObjectMapper();
@@ -198,7 +272,6 @@ public class NexusReportExporter {
                 continue;
             }*/
             //System.out.println(groupId+":"+artifactId);
-
 
             String policyId;
             String policyName;
@@ -268,6 +341,13 @@ public class NexusReportExporter {
 
             otherAvailableVersions = getOtherVersionsOfTheComponent(applicationDependency);
             applicationDependency.setOtherAvailableVersions(otherAvailableVersions);
+
+            for (Workflow workflow : workflows){
+                if (workflow.getApplicationName().equalsIgnoreCase(applicationName) && workflow.getDependencyName().equalsIgnoreCase(dependencyName)){
+                    applicationDependency.setWorkflow(workflow);
+                    break;
+                }
+            }
 
             applicationDependencies.add(applicationDependency);
         }
@@ -759,6 +839,15 @@ public class NexusReportExporter {
                         if (index == 0 && dependency.getAllSecurityIssues() != null){
                             cell = row.createCell(12);
                             cell.setCellValue(dependency.getAllSecurityIssues().size());
+                        }
+
+                        cell = row.createCell(13); // Highest Available Version
+                        if (dependency.getWorkflow()!= null && !dependency.getWorkflow().getImpactedWorkflow().isEmpty()) {
+                            cell.setCellValue(dependency.getWorkflow().getImpactedWorkflow());
+                        }
+                        cell = row.createCell(14); // Highest Available Version
+                        if (dependency.getWorkflow()!= null && !dependency.getWorkflow().getTestCase().isEmpty()) {
+                            cell.setCellValue(dependency.getWorkflow().getTestCase());
                         }
                         //}
                     }
