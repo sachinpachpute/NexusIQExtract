@@ -166,4 +166,27 @@ public class DirectoryBrowser {
         }
     }
 }
+---
+
+import java.net.URI;
+import java.net.URISyntaxException;
+
+public class Main {
+    public static void main(String[] args) {
+        String filePath = "C:/Users/John Doe/Documents/my file.txt";
+        String encodedPath = encodeFilePath(filePath);
+        System.out.println("Encoded file path: " + encodedPath);
+    }
+
+    public static String encodeFilePath(String filePath) {
+        try {
+            URI uri = new URI(null, null, filePath, null);
+            return uri.toASCIIString();
+        } catch (URISyntaxException e) {
+            // Handle URISyntaxException
+            e.printStackTrace();
+            return null;
+        }
+    }
+}
 
