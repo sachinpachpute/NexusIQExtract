@@ -168,25 +168,42 @@ public class DirectoryBrowser {
 }
 ---
 
-import java.net.URI;
-import java.net.URISyntaxException;
+public void checkJsonResponseAndPopulate() {
+    String jsonResponse = null;
+    int attempts = 0;
+    int maxAttempts = 15; // 30 seconds / 2 seconds per attempt
 
-public class Main {
-    public static void main(String[] args) {
-        String filePath = "C:/Users/John Doe/Documents/my file.txt";
-        String encodedPath = encodeFilePath(filePath);
-        System.out.println("Encoded file path: " + encodedPath);
-    }
-
-    public static String encodeFilePath(String filePath) {
-        try {
-            URI uri = new URI(null, null, filePath, null);
-            return uri.toASCIIString();
-        } catch (URISyntaxException e) {
-            // Handle URISyntaxException
-            e.printStackTrace();
-            return null;
+    while (jsonResponse == null && attempts < maxAttempts) {
+        jsonResponse = getJson();
+        if (jsonResponse != null) {
+            populateData(jsonResponse);
+            return; // Exit the method once data is populated
+        } else {
+            attempts++;
+            try {
+                Thread.sleep(2000); // Wait for 2 seconds before trying again
+            } catch (InterruptedException e) {
+                // Handle the exception, if necessary
+                Thread.currentThread().interrupt();
+                System.out.println("Thread was interrupted. Exiting the check loop.");
+                return;
+            }
         }
     }
+
+    if (jsonResponse == null) {
+        System.out.println("jsonResponse is still null after 30 seconds. Moving on...");
+    }
+}
+
+// Assuming getJson and populateData methods are defined elsewhere
+public String getJson() {
+    // Placeholder for actual implementation
+    return null; // Replace with actual JSON retrieval logic
+}
+
+public void populateData(String jsonResponse) {
+    // Placeholder for actual implementation
+    System.out.println("Populating data with: " + jsonResponse);
 }
 
