@@ -27,6 +27,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+/*import java.net.URI;
+import java.net.URISyntaxException;*/
+
+
 public class NexusReportExporter {
 
     private static final String NEXUS_IQ_URL = "https://nexus-iq.vocalink.co.uk";
@@ -36,6 +40,9 @@ public class NexusReportExporter {
     private static final String NEXUS_RM_URL = "https://nexus-rm.vocalink.co.uk";
     private static final String RM_USERNAME = "sachin.pachpute";
     private static final String RM_PASSWORD = "SachShrav@404";
+
+    /*private static final String RM_USERNAME = "tanisha.sethi";
+    private static final String RM_PASSWORD = "Apr@123456789";*/
 
     private static Date currentDate = new Date();
     private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
@@ -73,7 +80,7 @@ public class NexusReportExporter {
                     "Constraint Reason", "Current Version", "Highest Available Version",
                     "Next Version With No Policy Violation",
                     "Next Version With No Policy Violation including Dependencies",
-                    "More Versions With No Policy Violation", "CVE Count", "Impacted Workflow", "QA test cases"};
+                    "More Versions With No Policy Violation", "CVE Count", "Impacted Workflow", "QA test cases", "Test case link"};
             for (int i = 0; i < columnNames.length; i++) {
                 Cell cell = headingRow.createCell(i);
                 cell.setCellValue(columnNames[i]);
@@ -107,6 +114,21 @@ public class NexusReportExporter {
                     writeToExcel(applicationDependencies, workbook, CSV_FILE_PATH);
                 }
             }
+
+            // Create a new worksheet with the specified name
+            Sheet sheet1 = workbook.createSheet("RemediationData");
+
+            // Write the common heading row
+            Row headingRow1 = sheet1.createRow(0);
+            String[] columnNames1 = {"Application", "Release Delivered", "CVE Count"};
+            for (int i = 0; i < columnNames.length; i++) {
+                Cell cell = headingRow.createCell(i);
+                cell.setCellValue(columnNames[i]);
+            }
+
+            List<Remediation> remediationData = getRemediationDataFromConfluence();
+
+            writeToExcelRemediationData(remediationData, workbook, CSV_FILE_PATH);
 
             //writeToCSV(applicationDependencies, CSV_FILE_PATH);
             System.out.println("CSV file created successfully.");
@@ -143,14 +165,18 @@ public class NexusReportExporter {
 
             for (Element row : rows) {
                 Elements cells = row.select("td");
-                if (cells.size() == 4) { // Assuming each row has 4 cells representing Application, Component, Workflows, Test Cases
+                if (cells.size() == 5) { // Assuming each row has 4 cells representing Application, Component, Workflows, Test Cases
                     String application = cells.get(0).text();
-                    String component = cells.get(1).text();
-                    String workflowsText = cells.get(2).text();
-                    String testCases = extractHyperlinks(cells.get(3));
+                    String appCode = cells.get(1).text();
+                    String component = cells.get(2).text();
+                    String workflowsText = cells.get(3).text();
+                    String testCasesText = cells.get(4).text();
+                    String testCasesLink = extractHyperlinks(cells.get(4));
+                    //String tempVariable = "https://mastercardgbr-my.sharepoint.com/personal/keerthana_ravikumar_mastercard_com/Documents/QA Test Cases/"+appCode+"/"+application+"_"+component+".xlsx";
+                    //tempVariable = encodeFilePath(tempVariable);
 
                     // Create a new Workflow object and add it to the list
-                    Workflow workflow = new Workflow(application, component, workflowsText, testCases);
+                    Workflow workflow = new Workflow(application, component, workflowsText, testCasesText, testCasesLink);
                     workflows.add(workflow);
                 }
             }
@@ -164,16 +190,74 @@ public class NexusReportExporter {
         return workflows;
     }
 
+    /*public static String encodeFilePath(String filePath) {
+        try {
+            URI uri = new URI(null, null, filePath, null);
+            return uri.toASCIIString();
+        } catch (URISyntaxException e) {
+            // Handle URISyntaxException
+            e.printStackTrace();
+            return null;
+        }
+    }*/
+
+    private static List<Remediation> getRemediationDataFromConfluence() throws IOException {
+        String baseUrl = "https://confluence.vocalink.co.uk"; // Replace with your Confluence base URL
+        String username = "sachin.pachpute"; // Replace with your Confluence username
+        String password = "SachShrav@404"; // Replace with your Confluence password
+        String pageId = "244387455"; // Replace with the actual page ID
+        List<Remediation> remediationDataList = null;
+
+        try {
+            HttpClient httpClient = HttpClients.createDefault();
+            HttpGet request = new HttpGet(baseUrl + "/rest/api/content/" + pageId + "?expand=body.view");
+            request.addHeader("Authorization", "Basic " + java.util.Base64.getEncoder().encodeToString((username + ":" + password).getBytes()));
+
+            HttpResponse response = httpClient.execute(request);
+            String responseBody = EntityUtils.toString(response.getEntity());
+
+            JSONObject json = new JSONObject(responseBody);
+            JSONObject view = json.getJSONObject("body").getJSONObject("view");
+            String tableHtml = view.getString("value");
+
+            remediationDataList = new ArrayList<>();
+
+            // Parse table data and populate Workflow objects
+            Document doc = Jsoup.parse(tableHtml);
+            Element table = doc.select("table").first();
+            Elements rows = table.select("tr");
+
+            for (Element row : rows) {
+                Elements cells = row.select("td");
+                if (cells.size() == 3) { // Assuming each row has 3 cells representing Application, release, cve before remediation, cve after remediation
+                    String application = cells.get(0).text();
+                    String releaseDelivered = cells.get(1).text();
+                    String cveCount = cells.get(2).text();
+                    //String cveAfterRemediation = cells.get(3).text();
+
+                    Remediation remediation = new Remediation(application, releaseDelivered, cveCount);
+                    remediationDataList.add(remediation);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return remediationDataList;
+    }
+
     // Method to extract hyperlinks from the cell content
     private static String extractHyperlinks(Element cell) {
-        StringBuilder result = new StringBuilder();
+        //StringBuilder result = new StringBuilder();
+        String result = "";
         Elements links = cell.select("a[href]");
         for (Element link : links) {
-            String linkText = link.text();
+            //String linkText = link.text();
             String linkHref = link.attr("href");
-            result.append("<a href='").append(linkHref).append("'>").append(linkText).append("</a>").append(", ");
+            result = "https://confluence.vocalink.co.uk"+linkHref;
+            break;
+            //result.append("<a href='").append(linkHref).append("'>").append(linkText).append("</a>").append(", ");
         }
-        return result.toString();
+        return result;
     }
 
     /*private static void createSummaryWorksheet(String CSV_FILE_PATH, Map<String, String> applications) throws IOException {
@@ -268,7 +352,7 @@ public class NexusReportExporter {
             /*Component component = new Component(dependencyPackageUrl, coordinates);
             components.add(component);*/
 
-            /*if (!artifactId.equals("aopalliance")){
+            /*if (!artifactId.equals("xstream")){
                 continue;
             }*/
             //System.out.println(groupId+":"+artifactId);
@@ -537,24 +621,52 @@ public class NexusReportExporter {
 
         try{
             //Wait for 2 seconds because report generally is not ready to be accessed immediately and you get 404 error in that case
-            Thread.sleep(1000);
-            if(checkIfEvaluatioResultIsReady(resultsUrl)){
+            Thread.sleep(3000);
+            String jsonResponse = null;
+            int attempts = 0;
+            int maxAttempts = 15; // 30 seconds / 2 seconds per attempt
+
+            while (jsonResponse == null && attempts < maxAttempts) {
+                jsonResponse = connectToNexusIQ(new URL(NEXUS_IQ_URL + "/" + resultsUrl));
+                if (jsonResponse != null) {
+                    populatePolicyEvaluationResultData(components, jsonResponse, applicationDependency);
+                    break; // Break the loop once data is populated
+                } else {
+                    attempts++;
+                    try {
+                        Thread.sleep(2000); // Wait for 2 seconds before trying again
+                    } catch (InterruptedException e) {
+                        // Handle the exception, if necessary
+                        Thread.currentThread().interrupt();
+                        System.out.println("Thread was interrupted. Exiting the check loop.");
+                        return;
+                    }
+                }
+            }
+
+            if (jsonResponse == null) {
+                System.out.println("Component: "+ components.get(0).getCoordinates().toString());
+                System.out.println("Evaluation Results are not ready. jsonResponse is still null after 30 seconds. Moving on...");
+            }
+
+            /*if(checkIfEvaluatioResultIsReady(resultsUrl)){
                 String jsonResponse = connectToNexusIQ(new URL(NEXUS_IQ_URL + "/" + resultsUrl));
                 populatePolicyEvaluationResultData(components, jsonResponse, applicationDependency);
             } else {
+                System.out.println("Evaluation Result was not ready 1st attempt");
                 Thread.sleep(1000);
                 if(checkIfEvaluatioResultIsReady(resultsUrl)){
                     String jsonResponse = connectToNexusIQ(new URL(NEXUS_IQ_URL + "/" + resultsUrl));
                     populatePolicyEvaluationResultData(components, jsonResponse, applicationDependency);
                 } else {
+                    System.out.println("Evaluation Result was not ready 2nd attempt");
                     populatePolicyEvaluationResultData(components, null, applicationDependency);
                 }
-            }
+            }*/
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
-
     private static boolean checkIfEvaluatioResultIsReady(String resultsUrl) throws IOException{
         URL urlObj = new URL(NEXUS_IQ_URL + "/" + resultsUrl);
 
@@ -583,11 +695,17 @@ public class NexusReportExporter {
     private static void populatePolicyEvaluationResultData(List<Component> components, String jsonResponse, ApplicationDependency applicationDependency) throws IOException{
         //System.out.println(jsonResponse);
         if(jsonResponse == null){
+            System.out.println(components.get(0).getCoordinates());
+            System.out.println("Error: populatePolicyEvaluationResultData JSON is null");
             return;
         }
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = objectMapper.readTree(jsonResponse);
         JsonNode resultsNode = rootNode.path("results");
+
+        if(!rootNode.has("results")){
+            System.out.println("results were not ready line 680");
+        }
 
         String policyId;
         String policyName;
@@ -841,13 +959,18 @@ public class NexusReportExporter {
                             cell.setCellValue(dependency.getAllSecurityIssues().size());
                         }
 
-                        cell = row.createCell(13); // Highest Available Version
+                        cell = row.createCell(13);
                         if (dependency.getWorkflow()!= null && !dependency.getWorkflow().getImpactedWorkflow().isEmpty()) {
                             cell.setCellValue(dependency.getWorkflow().getImpactedWorkflow());
                         }
-                        cell = row.createCell(14); // Highest Available Version
+                        cell = row.createCell(14);
                         if (dependency.getWorkflow()!= null && !dependency.getWorkflow().getTestCase().isEmpty()) {
                             cell.setCellValue(dependency.getWorkflow().getTestCase());
+                        }
+
+                        cell = row.createCell(15);
+                        if (dependency.getWorkflow()!= null && !dependency.getWorkflow().getTestCaseLink().isEmpty()) {
+                            cell.setCellValue(dependency.getWorkflow().getTestCaseLink());
                         }
                         //}
                     }
@@ -885,6 +1008,46 @@ public class NexusReportExporter {
             sheet.setDefaultColumnStyle(1, style);
             sheet.setDefaultColumnStyle(6, style);
             sheet.setDefaultColumnStyle(11, style);
+
+            // Write the workbook to a file
+            try (FileOutputStream outputStream = new FileOutputStream(fileName)) {
+                workbook.write(outputStream);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void writeToExcelRemediationData(List<Remediation> remediations, Workbook workbook, String fileName) throws IOException {
+
+        try {
+            // Write data to the worksheet
+            Sheet sheet = workbook.getSheet("RemediationData");
+            int rowNumber = sheet.getLastRowNum()+1; // Start from row 1 after the heading row
+            for (Remediation remediation : remediations) {
+
+                Row row = sheet.createRow(rowNumber++);
+
+                // Write data to cells in the row
+                Cell cell = row.createCell(0); // Application Name
+                cell.setCellValue(remediation.getApplicationName());
+
+                cell = row.createCell(1); // Dependency Name
+                cell.setCellValue(remediation.getReleaseDelivered());
+
+                cell = row.createCell(2); // Dependency Package URL
+                cell.setCellValue(remediation.getCveCount());
+            }
+
+            sheet.setColumnWidth(1, 18000);
+            sheet.setColumnWidth(2, 18000);
+            sheet.setColumnWidth(3, 18000);
+
+            CellStyle style = workbook.createCellStyle();
+            style.setWrapText(true);
+            sheet.setDefaultColumnStyle(1, style);
+            sheet.setDefaultColumnStyle(2, style);
+            sheet.setDefaultColumnStyle(3, style);
 
             // Write the workbook to a file
             try (FileOutputStream outputStream = new FileOutputStream(fileName)) {
@@ -963,11 +1126,23 @@ public class NexusReportExporter {
             String basicAuth = "Basic " + new String(Base64.getEncoder().encode(userCredentials.getBytes()));
             connection.setRequestProperty("Authorization", basicAuth);
 
-            reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
+            // Get the HTTP response code
+            int responseCode = connection.getResponseCode();
+
+            // Check if the response code indicates success (200 OK)
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+            } else {
+                // Error response
+                System.out.println("connectToNexusIQ : Returning null as there is an error response"+urlObj.toString());
+                return null;
             }
+
+
         } finally {
             if (reader != null) {
                 reader.close();
@@ -1082,8 +1257,35 @@ public class NexusReportExporter {
 
         try{
             //Wait for 2 seconds because report generally is not ready to be accessed immediately and you get 404 error in that case
-            Thread.sleep(1000);
-            if(checkIfEvaluatioResultIsReady(resultsUrl)){
+            Thread.sleep(3000);
+            String jsonResponse = null;
+            int attempts = 0;
+            int maxAttempts = 15; // 30 seconds / 2 seconds per attempt
+
+            while (jsonResponse == null && attempts < maxAttempts) {
+                jsonResponse = connectToNexusIQ(new URL(NEXUS_IQ_URL + "/" + resultsUrl));
+                if (jsonResponse != null) {
+                    populateSecurityIssues(dependencies, jsonResponse);
+                    break; // Break the looponce data is populated
+                } else {
+                    attempts++;
+                    try {
+                        Thread.sleep(2000); // Wait for 2 seconds before trying again
+                    } catch (InterruptedException e) {
+                        // Handle the exception, if necessary
+                        Thread.currentThread().interrupt();
+                        System.out.println("Thread was interrupted. Exiting the check loop.");
+                        return;
+                    }
+                }
+            }
+
+            if (jsonResponse == null) {
+                System.out.println("Inside populateEachComponentWithPolicyViolationAndSecurityIssuesData -  jsonResponse is still null after 30 seconds. Moving on...");
+            }
+
+
+            /*if(checkIfEvaluatioResultIsReady(resultsUrl)){
                 String jsonResponse = connectToNexusIQ(new URL(NEXUS_IQ_URL + "/" + resultsUrl));
                 populateSecurityIssues(dependencies, jsonResponse);
             } else {
@@ -1094,7 +1296,7 @@ public class NexusReportExporter {
                 } else {
                     return;
                 }
-            }
+            }*/
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
