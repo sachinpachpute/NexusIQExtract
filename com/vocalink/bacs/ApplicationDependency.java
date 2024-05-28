@@ -20,6 +20,7 @@ public class ApplicationDependency {
     private PolicyViolation highestPolicyViolation;
     private Coordinates coordinates;
     private List<Component> otherAvailableVersions;
+    private Workflow workflow;
 
     public ApplicationDependency(String applicationName, String applicationInternalId, String dependencyName, String dependencyPackageUrl, boolean isDirectDependency, boolean isInnerSource, Coordinates coordinates) {
         this.applicationName = applicationName;
@@ -165,5 +166,13 @@ public class ApplicationDependency {
 
     public List<SecurityIssue> getAllSecurityIssues() {
         return allSecurityIssues;
+    }
+
+    public Workflow getWorkflow() {
+        return workflow;
+    }
+
+    public void setWorkflow(Workflow workflow) {
+        this.workflow = workflow;
     }
 }
