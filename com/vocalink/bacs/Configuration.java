@@ -7,7 +7,11 @@ public class Configuration {
     public static final Map<String, String> applications = new HashMap<>();
 
     static {
+
         applications.put("f7c40f604aa84b99aa787d5cd0db6087", "ets");
+        applications.put("9fdcfa10d35a4f109e006a7afe1d3519", "acsw-xval");
+
+        /*applications.put("f7c40f604aa84b99aa787d5cd0db6087", "ets");
         applications.put("9fdcfa10d35a4f109e006a7afe1d3519", "acsw-xval");
         applications.put("221c790043c245e982e29fc83cb1bfad", "acsw-engine");
         applications.put("3d1eafcb67ae4eb18a35c4ddf16f55d6", "acsw-ui");
@@ -16,6 +20,7 @@ public class Configuration {
         applications.put("195f723a225547c79dd36e7178c50084", "psw_ocs");
         applications.put("080393c35570400aab3c46c5ec483e24", "busw-engine");
         applications.put("6c89e3aee3de4cd1a86859f3672cfcfc", "meaud");
+        applications.put("b42ede4aee324efb8cf9eac1b1d8b612", "meadd");
         applications.put("903e31dafbcb4170a3951771d43740bd", "isa-engine");
         applications.put("182533052da84b7a8f13a4c8a27057a9", "soap-ejb");
         applications.put("b497209b3ee54daabf31d2b0152f0651", "refdata");
@@ -38,7 +43,7 @@ public class Configuration {
         applications.put("c7a502df99bf47e795523024c91b9aed", "actlog");
         applications.put("21b2c0a994ea40cc91c720f4c1e499df", "sts");
         applications.put("2b30e6ebd68a4837986929be80910018", "mi");
-        applications.put("cc6f76e9e55644dcbf509686d59988de", "mic");
+        applications.put("cc6f76e9e55644dcbf509686d59988de", "mic");*/
         //applications.put("5e829c6689c34d0e8d4f073416745b41", "bacs-all");
         //applications.put("cb8fc10103e146929f625690d7f383e0", "acsw-com");
         //applications.put("ea3ef8f611e740ec9cf51194d714c430", "security-provider__cscommon");
