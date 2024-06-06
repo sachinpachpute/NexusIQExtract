@@ -207,3 +207,7 @@ public void populateData(String jsonResponse) {
     System.out.println("Populating data with: " + jsonResponse);
 }
 
+
+-----
+
+To give an overview, we need an environment for running a java utility which is an executable jar. This is a standalone application, and no client will be accessing it (it has no exposed APIs or web component). This is a lightweight application which is not expected to consume a lot of heap. Application collects the data from Nexus and Confluence, aggregates it and stores into a CSV file in a specified directory on the same machine. The file will then be transferred to Mastercard network using GoAnywhere (we have Robin helping us on this).
