@@ -236,3 +236,52 @@ policyId = policyViolationNode.path("policyId").asText();
                 }
 
                 PolicyViolation pv = new PolicyViolation(policyId, policyName, policyThreatCategory, policyThreatLevel);
+
+----
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.Random;
+
+public class PolicyViolationPopulator {
+
+    public static PolicyViolation createRandomPolicyViolation() {
+        // Create random policy violation details
+        String policyId = UUID.randomUUID().toString();
+        String policyName = "Random Policy " + new Random().nextInt(100);
+        int policyThreatLevel = new Random().nextInt(10) + 1;
+        String policyThreatCategory = "Category " + new Random().nextInt(5);
+
+        // Create a list of constraints with random data
+        List<Constraint> constraintViolations = new ArrayList<>();
+        String constraintId = UUID.randomUUID().toString();
+        String constraintName = "Constraint " + new Random().nextInt(50);
+
+        // Create a list of reasons with random data
+        List<Reason> reasons = new ArrayList<>();
+        String conditionSummary = "Condition Summary " + new Random().nextInt(100);
+        String conditionReason = "Condition Reason " + new Random().nextInt(100);
+        Reason reason = new Reason(conditionSummary, conditionReason);
+        reasons.add(reason);
+
+        // Create a new Constraint and set reasons
+        Constraint constraint = new Constraint(constraintId, constraintName);
+        constraint.setReasons(reasons);
+
+        // Add the constraint to the list of constraint violations
+        constraintViolations.add(constraint);
+
+        // Create and return the PolicyViolation object
+        PolicyViolation policyViolation = new PolicyViolation(policyId, policyName, policyThreatCategory, policyThreatLevel);
+        policyViolation.setConstraints(constraintViolations);
+
+        return policyViolation;
+    }
+
+    public static void main(String[] args) {
+        PolicyViolation randomPolicyViolation = createRandomPolicyViolation();
+        System.out.println(randomPolicyViolation);
+    }
+}
+
