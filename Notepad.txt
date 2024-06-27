@@ -210,11 +210,29 @@ public void populateData(String jsonResponse) {
 
 -----
 
-Nexus IQ
-Nexus IQ Server is a policy engine that enables organizations to manage open source governance and security at every stage of the software development lifecycle. It scans components for vulnerabilities and license issues, and enforces policies based on organizational rules. It provides detailed insights into open source components, including security vulnerabilities and licensing issues.
+policyId = policyViolationNode.path("policyId").asText();
+                policyName = policyViolationNode.path("policyName").asText();
+                policyThreatLevel = policyViolationNode.path("policyThreatLevel").asInt();
+                policyThreatCategory = policyViolationNode.path("policyThreatCategory").asText();
+                List <Constraint> constraintViolations = new ArrayList<>();
+                JsonNode constViolations = policyViolationNode.path("constraints");
 
-Nexus Repository Manager (Nexus RM)
-Nexus Repository Manager (Nexus RM) is a repository manager that allows organizations to manage all of their binary artifacts in one place. It supports various repository formats and helps with storing, managing, and securing component lifecycle management. Nexus RM integrates with build and deployment tools to streamline the development process and ensure that the correct components are used.
+                for (JsonNode constViolation  : constViolations) {
+                    String constraintId = constViolation.path("constraintId").asText();
+                    String constraintName = constViolation.path("constraintName").asText();
 
-Confluence
-Confluence is a collaboration tool used for documentation, project management, and team collaboration. It allows teams to create, share, and collaborate on content in a centralized location. For the context of this extract, Confluence is used to maintain manual documentation on impacted workflows and QA test cases, which are crucial for understanding the implications of changes in software components.
+                    JsonNode reasons = constViolation.path("conditions");
+
+                    List <Reason> reasons1 = new ArrayList<>();
+                    for (JsonNode reason  : reasons) {
+                        String conditionSummary = reason.path("conditionSummary").asText();
+                        String conditionReason = reason.path("conditionReason").asText();
+                        Reason reason1 = new Reason(conditionSummary, conditionReason);
+                        reasons1.add(reason1);
+                    }
+                    Constraint newConstraint = new Constraint(constraintId, constraintName);
+                    newConstraint.setReasons(reasons1);
+                    constraintViolations.add(newConstraint);
+                }
+
+                PolicyViolation pv = new PolicyViolation(policyId, policyName, policyThreatCategory, policyThreatLevel);
